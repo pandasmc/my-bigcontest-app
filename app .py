@@ -61,7 +61,7 @@ def load_data(filepath):
         return None
 
 # --- 데이터 로드 실행 ---
-data = load_data("final_master_data.csv")
+data = load_data("최종데이터.csv")
 
 # ----------------------------------------------------------------------
 # 3. Gemini 프롬프트 생성 함수
