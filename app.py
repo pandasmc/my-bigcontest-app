@@ -200,34 +200,25 @@ def show_report(store_data, data):
     st.markdown("""
     <style>
     .metric-box {
-        border: 1px solid #e1e4e8;
-        border-radius: 10px;
-        padding: 20px;
-        text-align: center;
-        background-color: #f6f8fa;
-        height: 150px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+        border: 1px solid #e1e4e8; border-radius: 10px; padding: 20px;
+        text-align: center; background-color: #f6f8fa; height: 150px;
+        display: flex; flex-direction: column; justify-content: center;
         transition: box-shadow 0.3s ease-in-out;
     }
-    .metric-box:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    .metric-box:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .metric-label { font-size: 1em; color: #586069; margin-bottom: 8px; }
+    .metric-value { font-size: 2em; font-weight: 600; color: #24292e; }
+    .metric-trend { font-size: 1em; margin-top: 8px; }
+
+    /* [신규] 폐업 위험도 박스 스타일 */
+    .risk-box {
+        padding: 1rem; border-radius: 0.5rem; text-align: center;
+        font-weight: bold; font-size: 1.1em;
     }
-    .metric-label {
-        font-size: 1em;
-        color: #586069;
-        margin-bottom: 8px;
-    }
-    .metric-value {
-        font-size: 2em;
-        font-weight: 600;
-        color: #24292e;
-    }
-    .metric-trend {
-        font-size: 1em;
-        margin-top: 8px;
-    }
+    .risk-low { background-color: #e6ffed; border: 1px solid #b7ebc9; color: #2f6f4a; }
+    .risk-high { background-color: #ffebe6; border: 1px solid #ffc9b7; color: #c93c1d; }
+    .risk-medium { background-color: #fff8e1; border: 1px solid #ffecb3; color: #8a6d3b; }
+    .risk-default { background-color: #f6f8fa; border: 1px solid #e1e4e8; color: #586069; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -248,13 +239,22 @@ def show_report(store_data, data):
         st.markdown(f"**{store_data.get('업종', '업종정보 없음')}** 업종을 운영 중인 사장님 가게의 핵심 진단 결과입니다.")
         st.divider()
 
+        # --- [수정] 폐업 위험도 분석 섹션 레이아웃 변경 ---
         st.subheader("🚨 폐업 위험도 분석")
-        risk_level = parsed_data['폐업 위험도']
-        risk_factors = parsed_data['주요 원인']
-        if "높음" in risk_level or "매우 높음" in risk_level: st.error(f"**{risk_level}**")
-        elif "낮음" in risk_level or "매우 낮음" in risk_level: st.success(f"**{risk_level}**")
-        else: st.info(f"**{risk_level}**")
-        st.caption(f"**주요 원인:** {risk_factors}")
+        risk_col1, risk_col2 = st.columns([2, 5]) # 2:5 비율로 컬럼 분할
+        
+        with risk_col1:
+            risk_level = parsed_data['폐업 위험도']
+            css_class = "risk-default"
+            if "높음" in risk_level or "매우 높음" in risk_level: css_class = "risk-high"
+            elif "낮음" in risk_level or "매우 낮음" in risk_level: css_class = "risk-low"
+            elif "중간" in risk_level or "보통" in risk_level: css_class = "risk-medium"
+            
+            st.markdown(f'<div class="risk-box {css_class}">{risk_level}</div>', unsafe_allow_html=True)
+
+        with risk_col2:
+            risk_factors = parsed_data['주요 원인']
+            st.info(f"**주요 원인:** {risk_factors}")
         st.divider()
 
         st.subheader("🧬 3차원 정밀 진단")
@@ -276,21 +276,20 @@ def show_report(store_data, data):
         else: st.info("이 가게의 상권 정보 데이터를 찾을 수 없습니다.")
         st.divider()
 
-        # --- [수정] 주요 지표 섹션을 박스 UI로 변경 ---
         st.subheader("📊 주요 지표 최신 동향 (vs 3개월 전)")
         metric_col1, metric_col2, metric_col3 = st.columns(3)
         with metric_col1:
             value = format_value(store_data.get('업종내매출순위비율_1m'), "%")
             trend = format_trend_with_arrows(store_data.get('업종내매출순위비율_추세'))
-            st.markdown(f'<div class="metric-box"><div class="metric-label">업종 내 매출 순위 (1개월 전)</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-box"><div class="metric-label">업종 내 매출 순위</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
         with metric_col2:
             value = format_value(store_data.get('재방문율_1m'), "%")
             trend = format_trend_with_arrows(store_data.get('재방문율_추세'))
-            st.markdown(f'<div class="metric-box"><div class="metric-label">재방문율 (1개월 전)</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-box"><div class="metric-label">재방문율</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
         with metric_col3:
             value = format_value(store_data.get('신규고객비율_1m'), "%")
             trend = format_trend_with_arrows(store_data.get('신규고객비율_추세'))
-            st.markdown(f'<div class="metric-box"><div class="metric-label">신규 고객 비율 (1개월 전)</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-box"><div class="metric-label">신규 고객 비율</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
 
     with tab2:
         st.header("📈 상세 시계열 추이 분석 (최근 3개월)")
