@@ -196,23 +196,37 @@ def plot_bar_chart(ax, x, months, data_series, labels, title, colors):
 def show_report(store_data, data):
     """상세 리포트 화면을 그립니다."""
     
-    # [신규] UI/UX 개선을 위한 맞춤형 CSS
+    # [수정] UI/UX 개선을 위한 맞춤형 CSS
     st.markdown("""
     <style>
-    .report-box {
+    .metric-box {
         border: 1px solid #e1e4e8;
-        border-radius: 15px;
-        padding: 25px;
-        margin-bottom: 25px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        background-color: #f6f8fa;
+        height: 150px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         transition: box-shadow 0.3s ease-in-out;
     }
-    .report-box:hover {
-        box-shadow: 0 8px 12px rgba(0,0,0,0.1);
+    .metric-box:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
-    .report-box h2 { /* st.subheader에 해당 */
-        margin-top: 0;
-        font-size: 1.5em;
+    .metric-label {
+        font-size: 1em;
+        color: #586069;
+        margin-bottom: 8px;
+    }
+    .metric-value {
+        font-size: 2em;
+        font-weight: 600;
+        color: #24292e;
+    }
+    .metric-trend {
+        font-size: 1em;
+        margin-top: 8px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -234,8 +248,6 @@ def show_report(store_data, data):
         st.markdown(f"**{store_data.get('업종', '업종정보 없음')}** 업종을 운영 중인 사장님 가게의 핵심 진단 결과입니다.")
         st.divider()
 
-        # --- [수정] 박스 UI 적용 ---
-        st.markdown('<div class="report-box">', unsafe_allow_html=True)
         st.subheader("🚨 폐업 위험도 분석")
         risk_level = parsed_data['폐업 위험도']
         risk_factors = parsed_data['주요 원인']
@@ -243,48 +255,42 @@ def show_report(store_data, data):
         elif "낮음" in risk_level or "매우 낮음" in risk_level: st.success(f"**{risk_level}**")
         else: st.info(f"**{risk_level}**")
         st.caption(f"**주요 원인:** {risk_factors}")
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.divider()
 
-        st.markdown('<div class="report-box">', unsafe_allow_html=True)
         st.subheader("🧬 3차원 정밀 진단")
         col1, col2, col3 = st.columns(3)
         col1.metric("① 고객 유형", parsed_data['고객유형'])
         col2.metric("② 가게 경쟁력", parsed_data['경쟁력'])
         col3.metric("③ 고객 관계", parsed_data['고객관계'])
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.divider()
         
-        st.markdown('<div class="report-box">', unsafe_allow_html=True)
         st.subheader("🏘️ 우리 상권 현황")
-        current_district = store_data.get('상권') 
+        current_district = store_data.get('상권명') 
         if current_district and not pd.isna(current_district):
-            district_df = data[data['상권'] == current_district]
+            district_df = data[data['상권명'] == current_district]
             top_5_industries = district_df['업종'].value_counts().nlargest(5).rename_axis('업종').reset_index(name='가게 수')
             if not top_5_industries.empty:
                 st.write(f"**'{current_district}' 상권의 주요 업종 Top 5**")
                 st.dataframe(top_5_industries, use_container_width=True)
             else: st.info(f"'{current_district}' 상권의 다른 업종 정보를 찾을 수 없습니다.")
         else: st.info("이 가게의 상권 정보 데이터를 찾을 수 없습니다.")
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.divider()
 
-        st.markdown('<div class="report-box">', unsafe_allow_html=True)
+        # --- [수정] 주요 지표 섹션을 박스 UI로 변경 ---
         st.subheader("📊 주요 지표 최신 동향 (vs 3개월 전)")
         metric_col1, metric_col2, metric_col3 = st.columns(3)
         with metric_col1:
-            st.markdown("업종 내 매출 순위 (1개월 전)")
-            st.subheader(format_value(store_data.get('업종내매출순위비율_1m'), "%"))
-            trend_html = format_trend_with_arrows(store_data.get('업종내매출순위비율_추세'))
-            st.markdown(trend_html, unsafe_allow_html=True)
+            value = format_value(store_data.get('업종내매출순위비율_1m'), "%")
+            trend = format_trend_with_arrows(store_data.get('업종내매출순위비율_추세'))
+            st.markdown(f'<div class="metric-box"><div class="metric-label">업종 내 매출 순위 (1개월 전)</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
         with metric_col2:
-            st.markdown("재방문율 (1개월 전)")
-            st.subheader(format_value(store_data.get('재방문율_1m'), "%"))
-            trend_html = format_trend_with_arrows(store_data.get('재방문율_추세'))
-            st.markdown(trend_html, unsafe_allow_html=True)
+            value = format_value(store_data.get('재방문율_1m'), "%")
+            trend = format_trend_with_arrows(store_data.get('재방문율_추세'))
+            st.markdown(f'<div class="metric-box"><div class="metric-label">재방문율 (1개월 전)</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
         with metric_col3:
-            st.markdown("신규 고객 비율 (1개월 전)")
-            st.subheader(format_value(store_data.get('신규고객비율_1m'), "%"))
-            trend_html = format_trend_with_arrows(store_data.get('신규고객비율_추세'))
-            st.markdown(trend_html, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+            value = format_value(store_data.get('신규고객비율_1m'), "%")
+            trend = format_trend_with_arrows(store_data.get('신규고객비율_추세'))
+            st.markdown(f'<div class="metric-box"><div class="metric-label">신규 고객 비율 (1개월 전)</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
 
     with tab2:
         st.header("📈 상세 시계열 추이 분석 (최근 3개월)")
@@ -346,7 +352,7 @@ def show_report(store_data, data):
         
         local_info_for_prompt = "데이터 없음"
         if current_district and not pd.isna(current_district):
-            district_df = data[data['상권'] == current_district]
+            district_df = data[data['상권명'] == current_district]
             top_5_industries = district_df['업종'].value_counts().nlargest(5)
             if not top_5_industries.empty:
                 local_info_for_prompt = ", ".join([f"{index} ({value}개)" for index, value in top_5_industries.items()])
