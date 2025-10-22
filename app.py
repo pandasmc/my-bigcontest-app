@@ -197,30 +197,42 @@ def show_report(store_data, data):
     # [수정] UI/UX 개선을 위한 맞춤형 CSS
     st.markdown("""
     <style>
+    /* 메트릭 박스 기본 스타일 */
     .metric-box {
         border: 1px solid #e1e4e8; border-radius: 10px; padding: 20px;
-        text-align: center; background-color: #f6f8fa; height: 100%;
+        text-align: center; height: 100%;
         display: flex; flex-direction: column; justify-content: center;
-        transition: box-shadow 0.3s ease-in-out;
+        transition: box-shadow 0.3s ease-in-out, background-color 0.3s ease;
     }
     .metric-box:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     .metric-label { font-size: 1em; color: #586069; margin-bottom: 8px; }
     .metric-value { font-size: 1.75em; font-weight: 600; color: #24292e; word-wrap: break-word; }
     .metric-trend { font-size: 1em; margin-top: 8px; }
+    
+    /* 파스텔톤 배경색 */
+    .box-color-1 { background-color: #e6f7ff; } /* Pastel Blue */
+    .box-color-2 { background-color: #f6ffed; } /* Pastel Green */
+    .box-color-3 { background-color: #fffbe6; } /* Pastel Yellow */
 
+    /* 폐업 위험도 박스 스타일 */
+    .risk-container {
+        border: 1px solid #e1e4e8; border-radius: 10px; padding: 20px;
+        background-color: #f6f8fa;
+    }
     .risk-box {
         padding: 1rem; border-radius: 0.5rem; text-align: center;
-        font-weight: bold; font-size: 1.1em; height: 100%;
-        display: flex; align-items: center; justify-content: center;
+        font-weight: bold; font-size: 1.1em;
     }
-    .risk-factors {
-        background-color: #f6f8fa; padding: 1rem; border-radius: 0.5rem;
-        border: 1px solid #e1e4e8; height: 100%;
-    }
-    .risk-low { background-color: #e6ffed; border-color: #b7ebc9; color: #2f6f4a; }
-    .risk-high { background-color: #ffebe6; border-color: #ffc9b7; color: #c93c1d; }
-    .risk-medium { background-color: #fff8e1; border-color: #ffecb3; color: #8a6d3b; }
-    .risk-default { background-color: #f6f8fa; border-color: #e1e4e8; color: #586069; }
+    .risk-low { background-color: #e6f7ff; border: 1px solid #91d5ff; color: #0050b3; }
+    .risk-high { background-color: #fff1f0; border: 1px solid #ffccc7; color: #a8071a; }
+    .risk-medium { background-color: #f6ffed; border: 1px solid #d9f7be; color: #237804; }
+    .risk-default { background-color: #fafafa; border: 1px solid #d9d9d9; color: #595959; }
+
+    /* 상권 현황 바 차트 스타일 */
+    .bar-chart-row { display: flex; align-items: center; margin-bottom: 8px; }
+    .bar-chart-label { width: 35%; text-align: left; padding-right: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-chart-bar-container { width: 65%; background-color: #e1e4e8; border-radius: 5px; }
+    .bar-chart-bar { background-color: #0366d6; height: 20px; border-radius: 5px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -242,40 +254,53 @@ def show_report(store_data, data):
         st.divider()
 
         st.subheader("🚨 폐업 위험도 분석")
-        risk_col1, risk_col2 = st.columns([2, 5])
-        with risk_col1:
-            risk_level = parsed_data['폐업 위험도']
-            css_class = "risk-default"
-            if "높음" in risk_level or "매우 높음" in risk_level: css_class = "risk-high"
-            elif "낮음" in risk_level or "매우 낮음" in risk_level: css_class = "risk-low"
-            elif "중간" in risk_level or "보통" in risk_level: css_class = "risk-medium"
-            st.markdown(f'<div class="risk-box {css_class}">{risk_level}</div>', unsafe_allow_html=True)
-        with risk_col2:
-            risk_factors = parsed_data['주요 원인']
-            st.markdown(f'<div class="risk-factors"><strong>주요 원인:</strong><br>{risk_factors}</div>', unsafe_allow_html=True)
+        with st.container():
+            st.markdown('<div class="risk-container">', unsafe_allow_html=True)
+            risk_col1, risk_col2 = st.columns([2, 5])
+            with risk_col1:
+                risk_level = parsed_data['폐업 위험도']
+                css_class = "risk-default"
+                if "낮음" in risk_level: css_class = "risk-low"
+                elif "높음" in risk_level: css_class = "risk-high"
+                elif "중간" in risk_level or "보통" in risk_level: css_class = "risk-medium"
+                st.markdown(f'<div class="risk-box {css_class}">{risk_level}</div>', unsafe_allow_html=True)
+            with risk_col2:
+                risk_factors = parsed_data['주요 원인']
+                st.markdown(f"**주요 원인:**<br>{risk_factors}", unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         st.divider()
 
         st.subheader("🧬 3차원 정밀 진단")
         col1, col2, col3 = st.columns(3)
         with col1:
             value = parsed_data['고객유형']
-            st.markdown(f'<div class="metric-box"><div class="metric-label">① 고객 유형</div><div class="metric-value">{value}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-box box-color-1"><div class="metric-label">① 고객 유형</div><div class="metric-value">{value}</div></div>', unsafe_allow_html=True)
         with col2:
             value = parsed_data['경쟁력']
-            st.markdown(f'<div class="metric-box"><div class="metric-label">② 가게 경쟁력</div><div class="metric-value">{value}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-box box-color-2"><div class="metric-label">② 가게 경쟁력</div><div class="metric-value">{value}</div></div>', unsafe_allow_html=True)
         with col3:
             value = parsed_data['고객관계']
-            st.markdown(f'<div class="metric-box"><div class="metric-label">③ 고객 관계</div><div class="metric-value">{value}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-box box-color-3"><div class="metric-label">③ 고객 관계</div><div class="metric-value">{value}</div></div>', unsafe_allow_html=True)
         st.divider()
         
         st.subheader("🏘️ 우리 상권 현황")
         current_district = store_data.get('상권') 
         if current_district and not pd.isna(current_district):
             district_df = data[data['상권'] == current_district]
-            top_5_industries = district_df['업종'].value_counts().nlargest(5).rename_axis('업종').reset_index(name='가게 수')
+            top_5_industries = district_df['업종'].value_counts().nlargest(5)
             if not top_5_industries.empty:
                 st.write(f"**'{current_district}' 상권의 주요 업종 Top 5**")
-                st.dataframe(top_5_industries, use_container_width=True)
+                max_value = top_5_industries.max()
+                for index, value in top_5_industries.items():
+                    bar_width_percent = (value / max_value) * 100 if max_value > 0 else 0
+                    st.markdown(f"""
+                    <div class="bar-chart-row">
+                        <div class="bar-chart-label">{index} ({value}개)</div>
+                        <div class="bar-chart-bar-container">
+                            <div class="bar-chart-bar" style="width: {bar_width_percent}%;"></div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
             else: st.info(f"'{current_district}' 상권의 다른 업종 정보를 찾을 수 없습니다.")
         else: st.info("이 가게의 상권 정보 데이터를 찾을 수 없습니다.")
         st.divider()
@@ -285,15 +310,15 @@ def show_report(store_data, data):
         with metric_col1:
             value = format_value(store_data.get('업종내매출순위비율_1m'), "%")
             trend = format_trend_with_arrows(store_data.get('업종내매출순위비율_추세'))
-            st.markdown(f'<div class="metric-box"><div class="metric-label">업종 내 매출 순위</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-box box-color-1"><div class="metric-label">업종 내 매출 순위</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
         with metric_col2:
             value = format_value(store_data.get('재방문율_1m'), "%")
             trend = format_trend_with_arrows(store_data.get('재방문율_추세'))
-            st.markdown(f'<div class="metric-box"><div class="metric-label">재방문율</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-box box-color-2"><div class="metric-label">재방문율</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
         with metric_col3:
             value = format_value(store_data.get('신규고객비율_1m'), "%")
             trend = format_trend_with_arrows(store_data.get('신규고객비율_추세'))
-            st.markdown(f'<div class="metric-box"><div class="metric-label">신규 고객 비율</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-box box-color-3"><div class="metric-label">신규 고객 비율</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
 
     with tab2:
         st.header("📈 상세 시계열 추이 분석 (최근 3개월)")
