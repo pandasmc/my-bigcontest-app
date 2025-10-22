@@ -113,11 +113,11 @@ def generate_prompt(store_name, industry, open_date, close_date,
 3. 'risk_signal', 'opportunity_signal': 가장 중요한 위험/기회 신호 1가지씩을 넣어주세요.
 4. 'action_plan_detail': 구체적인 액션 플랜 1가지를 제안해주세요.
 5. 'fact_based_example': 위 'action_plan'과 유사한 전략으로 성공한 (사실 기반의) 타 업종 사례를 1~2줄로 요약해주세요.
-6. 'example_source': 위 성공 사례의 신뢰할 수 있는 출처(뉴스 기사, 블로그 등) URL을 반드시 포함해주세요.
+6. 'example_source': 위 성공 사례의 신뢰도를 위해, 가장 관련성이 높은 단 하나의 유효한 출처(뉴스 기사 등) URL을 포함해주세요. URL이 없거나 유효하지 않으면 "출처 없음"으로 응답해주세요.
 7. 'action_table': [단계, 실행 방안, 예상 비용]을 포함하는 마크다운 테이블 텍스트를 생성해주세요.
 8. 'expected_effect': 예상 기대효과를 구체적인 수치로 제시해주세요.
 9. 'encouragement': 사장님을 위한 따뜻한 응원의 메시지를 넣어주세요.
-10. 'local_event_recommendation': [현재 상권 현황] 정보를 바탕으로, 오늘 날짜 기준으로 해당 지역에서 진행 중이거나 예정인 팝업 스토어, 행사 등을 웹 검색하여 1~2개 추천하고 관련 URL을 제공해주세요. 가게 마케팅과 연관지어 설명해주세요.
+10. 'local_event_recommendation': [현재 상권 현황] 정보를 바탕으로, 오늘 날짜 기준으로 해당 지역에서 진행 중이거나 예정인 팝업 스토어, 행사 등을 웹 검색하여 가장 관련성 높은 1개를 추천하고, 유효한 URL을 제공해주세요. URL이 없으면 "정보 없음"으로 응답해주세요.
 
 {{
   "store_summary": "...", "risk_signal": "...", "opportunity_signal": "...",
@@ -143,25 +143,25 @@ def format_value(value, unit="", default_text="--"):
 # 4. 추세 아이콘 생성 함수
 # ----------------------------------------------------------------------
 def format_trend_with_arrows(trend_value):
-    """'증가 감소' 같은 텍스트를 색상과 아이콘, 텍스트로 변환합니다."""
-    if pd.isna(trend_value):
+    """'증가 감소' 같은 텍스트를 두 줄의 시각적 HTML로 변환합니다."""
+    if pd.isna(trend_value) or trend_value == "":
         return ""
 
-    arrow_map_icon_only = {
-        "증가": "<span style='color:red; font-size: 1.2em;'>↑</span>",
-        "감소": "<span style='color:blue; font-size: 1.2em;'>↓</span>",
-        "유지": "<span style='color:green; font-size: 1.2em;'>-</span>"
+    trend_map = {
+        "증가": "<span style='color:red; font-weight:bold; font-size:1.1em;'>🔺 증가</span>",
+        "감소": "<span style='color:blue; font-weight:bold; font-size:1.1em;'>🔻 감소</span>",
+        "유지": "<span style='color:green; font-weight:bold; font-size:1.1em;'>➖ 유지</span>"
     }
     
     parts = trend_value.split(' ')
 
     if len(parts) == 1:
-        icon = arrow_map_icon_only.get(parts[0], "")
-        return f"{icon} {trend_value}"
+        trend1 = trend_map.get(parts[0], parts[0])
+        return f"1개월 전 대비: {trend1}<br>2개월 전 대비: {trend1}"
     elif len(parts) == 2:
-        arrow1_icon = arrow_map_icon_only.get(parts[0], "")
-        arrow2_icon = arrow_map_icon_only.get(parts[1], "")
-        return f"{arrow1_icon}{arrow2_icon} ({trend_value})"
+        trend1 = trend_map.get(parts[0], parts[0])
+        trend2 = trend_map.get(parts[1], parts[1])
+        return f"1개월 전 대비: {trend1}<br>2개월 전 대비: {trend2}"
     
     return trend_value
 
@@ -197,26 +197,35 @@ def show_report(store_data, data):
     # [수정] UI/UX 개선을 위한 맞춤형 CSS
     st.markdown("""
     <style>
+    /* 전체 배경 흰색으로 고정 */
+    body {
+        background-color: #FFFFFF;
+    }
+    .stApp {
+        background-color: #FFFFFF;
+    }
+
     /* 메트릭 박스 기본 스타일 */
     .metric-box {
-        border-radius: 10px; padding: 20px;
+        border-radius: 10px; padding: 15px;
         text-align: center; height: 100%;
         display: flex; flex-direction: column; justify-content: center;
-        border: 1px solid transparent; /* 투명 테두리 */
-        transition: box-shadow 0.3s ease-in-out, background-color 0.3s ease;
+        border: 1px solid #e1e4e8;
+        background-color: #f6f8fa;
+        transition: box-shadow 0.3s ease-in-out;
     }
     .metric-box:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .metric-label { font-size: 0.9em; color: #586069; margin-bottom: 8px; font-weight: bold; }
-    .metric-value { font-size: 1.5em; font-weight: 600; color: #24292e; word-wrap: break-word; }
-    .metric-trend { font-size: 1em; margin-top: 8px; }
+    .metric-value { font-size: 1.5em; font-weight: 600; color: #24292e; word-wrap: break-word; margin-bottom: 8px; }
+    .metric-trend { font-size: 0.9em; line-height: 1.5; }
     
-    /* 파스텔톤 배경색 */
-    .box-color-1 { background-color: #F0F8FF; border-color: #D6EAF8; } /* AliceBlue */
-    .box-color-2 { background-color: #F0FFF0; border-color: #D4EFDF; } /* Honeydew */
-    .box-color-3 { background-color: #FFFACD; border-color: #F9E79F; } /* LemonChiffon */
-    .box-color-4 { background-color: #FAF0E6; border-color: #FAE5D3; } /* Linen */
-    .box-color-5 { background-color: #FFF0F5; border-color: #F5D7E3; } /* LavenderBlush */
-    .box-color-6 { background-color: #F5FFFA; border-color: #D5F5E3; } /* MintCream */
+    /* 파스텔톤 배경색 (테두리에만 적용) */
+    .box-color-1 { border-left: 5px solid #85C1E9; } 
+    .box-color-2 { border-left: 5px solid #82E0AA; } 
+    .box-color-3 { border-left: 5px solid #F7DC6F; } 
+    .box-color-4 { border-left: 5px solid #F0B27A; } 
+    .box-color-5 { border-left: 5px solid #D7BDE2; } 
+    .box-color-6 { border-left: 5px solid #A3E4D7; } 
 
     /* 폐업 위험도 박스 스타일 */
     .risk-container {
@@ -225,18 +234,19 @@ def show_report(store_data, data):
         border: 1px solid #e1e4e8;
     }
     .risk-level {
-        flex: 2; /* 비율 조정 */
+        flex: 2;
         font-weight: bold; font-size: 1.2em; text-align: center;
+        padding: 1rem; border-radius: 0.5rem;
     }
     .risk-factors {
-        flex: 5; /* 비율 조정 */
+        flex: 5;
         padding-left: 20px;
         border-left: 1px solid #e1e4e8;
     }
-    .risk-low { color: #0050b3; }
-    .risk-high { color: #a8071a; }
-    .risk-medium { color: #237804; }
-    .risk-default { color: #595959; }
+    .risk-low { color: #0050b3; background-color: #e6f7ff; }
+    .risk-high { color: #a8071a; background-color: #fff1f0; }
+    .risk-medium { color: #237804; background-color: #f6ffed; }
+    .risk-default { color: #595959; background-color: #fafafa; }
 
     /* 상권 현황 바 차트 스타일 */
     .bar-chart-container { border: 1px solid #e1e4e8; border-radius: 10px; padding: 20px; }
@@ -290,9 +300,9 @@ def show_report(store_data, data):
         st.divider()
         
         st.subheader("🏘️ 우리 상권 현황")
-        current_district = store_data.get('상권') 
+        current_district = store_data.get('상권명') 
         if current_district and not pd.isna(current_district):
-            district_df = data[data['상권'] == current_district]
+            district_df = data[data['상권명'] == current_district]
             top_5_industries = district_df['업종'].value_counts().nlargest(5)
             if not top_5_industries.empty:
                 st.write(f"**'{current_district}' 상권의 주요 업종 Top 5**")
@@ -365,7 +375,7 @@ def show_report(store_data, data):
         with chart_col4:
             data_list = [store_data.get(f'상권내매출순위비율_{m}m') for m in [3,2,1]] + [store_data.get(f'업종내매출순위비율_{m}m') for m in [3,2,1]]
             if pd.Series(data_list).notna().any():
-                fig, ax = plt.subplots(figsize=(6, 3.5))
+                fig, ax = plt.subplots(figsize=(5, 3)) # [수정] 차트 크기 통일
                 plot_bar_chart(ax, x, months, [data_list[0:3], data_list[3:6]], ['상권내', '업종내'], "매출 순위 비율 (상위 N%)", ['lightgray', 'steelblue'])
                 fig.tight_layout()
                 st.pyplot(fig)
@@ -373,7 +383,7 @@ def show_report(store_data, data):
         with chart_col5:
             data_list = [store_data.get(f'매출건수구간_{m}m') for m in [3,2,1]] + [store_data.get(f'매출금액구간_{m}m') for m in [3,2,1]]
             if pd.Series(data_list).notna().any():
-                fig, ax = plt.subplots(figsize=(6, 3.5))
+                fig, ax = plt.subplots(figsize=(5, 3)) # [수정] 차트 크기 통일
                 plot_bar_chart(ax, x, months, [data_list[0:3], data_list[3:6]], ['건수', '금액'], "매출 건수/금액 (구간)", ['gray', 'darkgreen'])
                 fig.tight_layout()
                 st.pyplot(fig)
@@ -389,7 +399,7 @@ def show_report(store_data, data):
         
         local_info_for_prompt = "데이터 없음"
         if current_district and not pd.isna(current_district):
-            district_df = data[data['상권'] == current_district]
+            district_df = data[data['상권명'] == current_district]
             top_5_industries = district_df['업종'].value_counts().nlargest(5)
             if not top_5_industries.empty:
                 local_info_for_prompt = ", ".join([f"{index} ({value}개)" for index, value in top_5_industries.items()])
@@ -469,7 +479,7 @@ def show_report(store_data, data):
                 st.markdown("---")
                 st.write(f"**AI 상담사의 응원 메시지:** {report_data.get('encouragement', '')}")
 
-        with st.expander("AI에게 전달된 프롬프트 내용 보기 (디버깅용)"):
+        with st.expander("AI에게 전달된 프롬MPT 내용 보기 (디버깅용)"):
             st.text_area("프롬프트 내용", prompt, height=300, disabled=True)
 
 def show_homepage(display_list, display_to_original_map):
