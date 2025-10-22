@@ -139,14 +139,14 @@ def format_value(value, unit="", default_text="데이터 없음"):
     return f"{value:.1f}"
 
 # ----------------------------------------------------------------------
-# [신규] 4. 추세 아이콘 생성 함수
+# 4. 추세 아이콘 생성 함수
 # ----------------------------------------------------------------------
 def format_trend_with_arrows(trend_value):
-    """'증가 감소' 같은 텍스트를 색상과 아이콘으로 변환합니다."""
+    """'증가 감소' 같은 텍스트를 색상과 아이콘, 텍스트로 변환합니다."""
     if pd.isna(trend_value):
         return ""
 
-    arrow_map = {
+    arrow_map_icon_only = {
         "증가": "<span style='color:red; font-size: 1.2em;'>↑</span>",
         "감소": "<span style='color:blue; font-size: 1.2em;'>↓</span>",
         "유지": "<span style='color:green; font-size: 1.2em;'>-</span>"
@@ -156,15 +156,16 @@ def format_trend_with_arrows(trend_value):
 
     # "유지"와 같이 한 단어인 경우
     if len(parts) == 1:
-        return arrow_map.get(parts[0], "")
+        icon = arrow_map_icon_only.get(parts[0], "")
+        return f"{icon} {trend_value}"
 
     # "증가 감소"와 같이 두 단어인 경우
     elif len(parts) == 2:
-        arrow1 = arrow_map.get(parts[0], "")
-        arrow2 = arrow_map.get(parts[1], "")
-        return f"{arrow1}{arrow2}"
+        arrow1_icon = arrow_map_icon_only.get(parts[0], "")
+        arrow2_icon = arrow_map_icon_only.get(parts[1], "")
+        return f"{arrow1_icon}{arrow2_icon} ({trend_value})"
     
-    return "" # 그 외의 경우
+    return trend_value
 
 # ----------------------------------------------------------------------
 # 5. 차트 생성 헬퍼 함수
@@ -239,9 +240,9 @@ def show_report(store_data, data):
         else: st.info("이 가게의 상권 정보 데이터를 찾을 수 없습니다.")
         st.divider()
 
-        # --- [수정] st.metric을 markdown과 subheader로 변경 ---
+        # --- [수정] 4개 컬럼 -> 3개 컬럼으로 변경하고 매출 규모 삭제 ---
         st.subheader("📊 주요 지표 최신 동향 (vs 3개월 전)")
-        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+        metric_col1, metric_col2, metric_col3 = st.columns(3)
         
         with metric_col1:
             st.markdown("업종 내 매출 순위 (1개월 전)")
@@ -259,12 +260,6 @@ def show_report(store_data, data):
             st.markdown("신규 고객 비율 (1개월 전)")
             st.subheader(format_value(store_data.get('신규고객비율_1m'), "%"))
             trend_html = format_trend_with_arrows(store_data.get('신규고객비율_추세'))
-            st.markdown(trend_html, unsafe_allow_html=True)
-            
-        with metric_col4:
-            st.markdown("매출 규모 (1개월 전)")
-            st.subheader(format_value(store_data.get('매출금액구간_1m'), "구간"))
-            trend_html = format_trend_with_arrows(store_data.get('매출금액구간_추세'))
             st.markdown(trend_html, unsafe_allow_html=True)
 
     with tab2:
@@ -384,7 +379,6 @@ def show_report(store_data, data):
                 st.subheader(report_data.get("action_plan_title", "핵심 액션 플랜"))
                 st.write(report_data.get("action_plan_detail", ""))
                 
-                # --- [신규] 지역 연계 마케팅 제안 표시 ---
                 st.subheader("💡 지역 연계 마케팅 제안")
                 event_rec = report_data.get("local_event_recommendation", {})
                 if event_rec and event_rec.get("title"):
@@ -457,7 +451,6 @@ def main():
     else:
         try:
             store_data_row = data[data['가맹점명'] == st.session_state.selected_store].iloc[0]
-            # [수정] show_report에 전체 데이터(data) 전달
             show_report(store_data_row, data)
         except (IndexError, KeyError) as e:
             st.error("선택한 가게 정보를 찾는 데 실패했습니다. 다시 검색해주세요.")
