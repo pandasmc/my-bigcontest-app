@@ -6,17 +6,13 @@ import warnings
 import re
 import json
 import time
-# [수정] 아래 라인 삭제
-# import matplotlib.font_manager as fm # 폰트 캐시 재빌드를 위해 추가
 
 # 경고 메시지 무시
 warnings.filterwarnings('ignore')
 
 # ----------------------------------------------------------------------
-# [수정] 한글 폰트 설정 (Streamlit Cloud 호환)
+# 한글 폰트 설정 (Streamlit Cloud 호환)
 # ----------------------------------------------------------------------
-# [수정] 오류를 일으키는 fm._rebuild() 라인 삭제
-# fm._rebuild()
 plt.rcParams['font.family'] = 'NanumGothic'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -121,6 +117,7 @@ def generate_prompt(store_name, industry, open_date, close_date,
 7. 'action_table': [단계, 실행 방안, 예상 비용]을 포함하는 마크다운 테이블 텍스트를 생성해주세요.
 8. 'expected_effect': 예상 기대효과를 구체적인 수치로 제시해주세요.
 9. 'encouragement': 사장님을 위한 따뜻한 응원의 메시지를 넣어주세요.
+10. 'local_event_recommendation': [현재 상권 현황] 정보를 바탕으로, 오늘 날짜 기준으로 해당 지역에서 진행 중이거나 예정인 팝업 스토어, 행사 등을 웹 검색하여 1~2개 추천하고 관련 URL을 제공해주세요. 가게 마케팅과 연관지어 설명해주세요.
 
 {{
   "store_summary": "...", "risk_signal": "...", "opportunity_signal": "...",
@@ -128,7 +125,8 @@ def generate_prompt(store_name, industry, open_date, close_date,
   "fact_based_example": "[성공 사례 요약]",
   "example_source": "https://www.example-news.com/article/123",
   "action_table": "| 단계 | 실행 방안 | 예상 비용 |\\n|---|---|---|\\n| 1단계 | OOO 실행 | 10만원 |",
-  "expected_effect": "신규 고객 15% 증가", "encouragement": "..."
+  "expected_effect": "신규 고객 15% 증가", "encouragement": "...",
+  "local_event_recommendation": {{ "title": "성수동 팝업스토어 추천", "details": "현재 성수동에서 'XYZ 브랜드 팝업'이 진행중입니다. 사장님 가게의 주 고객층과 유사하여 방문객 유입을 유도할 수 있습니다.", "source": "https://blog.example.com/seongsu-popup" }}
 }}
 """
     return prompt.strip()
@@ -140,13 +138,36 @@ def format_value(value, unit="", default_text="데이터 없음"):
     if unit == "구간": return f"{int(value)} {unit}"
     return f"{value:.1f}"
 
-def format_trend(trend_value):
-    """st.metric의 delta 값을 포맷팅합니다."""
-    if pd.isna(trend_value): return None
-    return str(trend_value)
+# ----------------------------------------------------------------------
+# [신규] 4. 추세 아이콘 생성 함수
+# ----------------------------------------------------------------------
+def format_trend_with_arrows(trend_value):
+    """'증가 감소' 같은 텍스트를 색상과 아이콘으로 변환합니다."""
+    if pd.isna(trend_value):
+        return ""
+
+    arrow_map = {
+        "증가": "<span style='color:red; font-size: 1.2em;'>↑</span>",
+        "감소": "<span style='color:blue; font-size: 1.2em;'>↓</span>",
+        "유지": "<span style='color:green; font-size: 1.2em;'>-</span>"
+    }
+    
+    parts = trend_value.split(' ')
+
+    # "유지"와 같이 한 단어인 경우
+    if len(parts) == 1:
+        return arrow_map.get(parts[0], "")
+
+    # "증가 감소"와 같이 두 단어인 경우
+    elif len(parts) == 2:
+        arrow1 = arrow_map.get(parts[0], "")
+        arrow2 = arrow_map.get(parts[1], "")
+        return f"{arrow1}{arrow2}"
+    
+    return "" # 그 외의 경우
 
 # ----------------------------------------------------------------------
-# 4. 차트 생성 헬퍼 함수
+# 5. 차트 생성 헬퍼 함수
 # ----------------------------------------------------------------------
 def plot_line_chart(ax, months, data_series, labels, title, colors, markers):
     """반복적인 선 그래프 생성 로직을 처리하는 함수"""
@@ -169,9 +190,9 @@ def plot_bar_chart(ax, x, months, data_series, labels, title, colors):
     ax.grid(True, axis='y', linestyle='--', alpha=0.5)
 
 # ----------------------------------------------------------------------
-# 5. UI 구성 함수 (리포트, 홈페이지)
+# 6. UI 구성 함수 (리포트, 홈페이지)
 # ----------------------------------------------------------------------
-def show_report(store_data):
+def show_report(store_data, data):
     """상세 리포트 화면을 그립니다."""
     if st.button("⬅️ 다른 가게 검색하기"):
         st.session_state.selected_store = None
@@ -207,16 +228,44 @@ def show_report(store_data):
         st.divider()
         
         st.subheader("🏘️ 우리 상권 현황")
-        local_info = store_data.get('상권내_주요업종', '데이터 없음') 
-        st.metric("상권 내 주요 업종 분포", local_info)
+        current_district = store_data.get('상권명') 
+        if current_district and not pd.isna(current_district):
+            district_df = data[data['상권명'] == current_district]
+            top_5_industries = district_df['업종'].value_counts().nlargest(5)
+            if not top_5_industries.empty:
+                st.write(f"**'{current_district}' 상권의 주요 업종 Top 5**")
+                st.dataframe(top_5_industries)
+            else: st.info(f"'{current_district}' 상권의 다른 업종 정보를 찾을 수 없습니다.")
+        else: st.info("이 가게의 상권 정보 데이터를 찾을 수 없습니다.")
         st.divider()
 
+        # --- [수정] st.metric을 markdown과 subheader로 변경 ---
         st.subheader("📊 주요 지표 최신 동향 (vs 3개월 전)")
         metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-        metric_col1.metric("업종 내 매출 순위 (1개월 전)", format_value(store_data.get('업종내매출순위비율_1m'), "%"), format_trend(store_data.get('업종내매출순위비율_추세')))
-        metric_col2.metric("재방문율 (1개월 전)", format_value(store_data.get('재방문율_1m'), "%"), format_trend(store_data.get('재방문율_추세')))
-        metric_col3.metric("신규 고객 비율 (1개월 전)", format_value(store_data.get('신규고객비율_1m'), "%"), format_trend(store_data.get('신규고객비율_추세')))
-        metric_col4.metric("매출 규모 (1개월 전)", format_value(store_data.get('매출금액구간_1m'), "구간"), format_trend(store_data.get('매출금액구간_추세')))
+        
+        with metric_col1:
+            st.markdown("업종 내 매출 순위 (1개월 전)")
+            st.subheader(format_value(store_data.get('업종내매출순위비율_1m'), "%"))
+            trend_html = format_trend_with_arrows(store_data.get('업종내매출순위비율_추세'))
+            st.markdown(trend_html, unsafe_allow_html=True)
+
+        with metric_col2:
+            st.markdown("재방문율 (1개월 전)")
+            st.subheader(format_value(store_data.get('재방문율_1m'), "%"))
+            trend_html = format_trend_with_arrows(store_data.get('재방문율_추세'))
+            st.markdown(trend_html, unsafe_allow_html=True)
+            
+        with metric_col3:
+            st.markdown("신규 고객 비율 (1개월 전)")
+            st.subheader(format_value(store_data.get('신규고객비율_1m'), "%"))
+            trend_html = format_trend_with_arrows(store_data.get('신규고객비율_추세'))
+            st.markdown(trend_html, unsafe_allow_html=True)
+            
+        with metric_col4:
+            st.markdown("매출 규모 (1개월 전)")
+            st.subheader(format_value(store_data.get('매출금액구간_1m'), "구간"))
+            trend_html = format_trend_with_arrows(store_data.get('매출금액구간_추세'))
+            st.markdown(trend_html, unsafe_allow_html=True)
 
     with tab2:
         st.header("📈 상세 시계열 추이 분석 (최근 3개월)")
@@ -275,13 +324,21 @@ def show_report(store_data):
             val = store_data.get(col_name)
             return str(val) if not pd.isna(val) else "데이터 없음"
         trend_analysis_text = "\n".join([f"- {col.replace('_', ' ')}: {get_trend_str(col)}" for col in store_data.index if '추세' in col])
+        
+        local_info_for_prompt = "데이터 없음"
+        if current_district and not pd.isna(current_district):
+            district_df = data[data['상권명'] == current_district]
+            top_5_industries = district_df['업종'].value_counts().nlargest(5)
+            if not top_5_industries.empty:
+                local_info_for_prompt = ", ".join([f"{index} ({value}개)" for index, value in top_5_industries.items()])
+
         prompt = generate_prompt(
             store_name=store_data.get('가맹점명'), industry=store_data.get('업종'),
             open_date=store_data.get('개설일'), close_date=store_data.get('폐업일'),
             closure_risk=parsed_data['폐업 위험도'], closure_factors=parsed_data['주요 원인'],
             customer_type=parsed_data['고객유형'], competitiveness=parsed_data['경쟁력'],
             customer_relation=parsed_data['고객관계'],
-            local_area_info=store_data.get('상권내_주요업종', '데이터 없음'), 
+            local_area_info=local_info_for_prompt, 
             trend_analysis_text=trend_analysis_text
         )
 
@@ -326,11 +383,25 @@ def show_report(store_data):
                 st.success(report_data.get("opportunity_signal", "기회 신호 없음"))
                 st.subheader(report_data.get("action_plan_title", "핵심 액션 플랜"))
                 st.write(report_data.get("action_plan_detail", ""))
+                
+                # --- [신규] 지역 연계 마케팅 제안 표시 ---
+                st.subheader("💡 지역 연계 마케팅 제안")
+                event_rec = report_data.get("local_event_recommendation", {})
+                if event_rec and event_rec.get("title"):
+                    st.success(f"**{event_rec.get('title')}**")
+                    st.write(event_rec.get("details"))
+                    source = event_rec.get("source")
+                    if source and "http" in source:
+                        st.caption(f"정보 출처: [{source}]({source})")
+                else:
+                    st.info("현재 추천할만한 주변 지역 행사를 찾지 못했습니다.")
+
                 st.subheader("📚 참고: 유사 전략 성공 사례")
                 st.warning(f"💡 {report_data.get('fact_based_example', '관련 사례 없음')}")
                 source_url = report_data.get("example_source")
                 if source_url and "http" in source_url:
                     st.caption(f"출처: [{source_url}]({source_url})")
+
                 st.markdown(report_data.get("action_table", "실행 계획 없음"))
                 st.subheader("📈 예상 기대효과")
                 st.success(f'**목표:** {report_data.get("expected_effect", "데이터 없음")}')
@@ -386,7 +457,8 @@ def main():
     else:
         try:
             store_data_row = data[data['가맹점명'] == st.session_state.selected_store].iloc[0]
-            show_report(store_data_row)
+            # [수정] show_report에 전체 데이터(data) 전달
+            show_report(store_data_row, data)
         except (IndexError, KeyError) as e:
             st.error("선택한 가게 정보를 찾는 데 실패했습니다. 다시 검색해주세요.")
             st.session_state.selected_store = None
