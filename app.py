@@ -1,0 +1,394 @@
+import streamlit as st
+import pandas as pd
+import google.generativeai as genai
+import matplotlib.pyplot as plt
+import warnings
+import re
+import json
+import time
+
+# 경고 메시지 무시 및 한글 폰트 설정
+warnings.filterwarnings('ignore')
+plt.rcParams['font.family'] = 'Malgun Gothic' # Windows
+plt.rcParams['axes.unicode_minus'] = False  # Minus sign 깨짐 방지
+
+
+# ----------------------------------------------------------------------
+# 1. 페이지 기본 설정
+# ----------------------------------------------------------------------
+st.set_page_config(
+    page_title="내 가게를 살리는 AI 비밀상담사",
+    page_icon="💡",
+    layout="wide",
+)
+
+
+# ----------------------------------------------------------------------
+# 2. 헬퍼 함수 (데이터 로드, 프롬프트, 포맷팅 등)
+# ----------------------------------------------------------------------
+@st.cache_data
+def load_data(filepath):
+    """데이터를 로드하고, 표시용 리스트와 매핑용 딕셔너리를 반환합니다."""
+    try:
+        df = pd.read_csv(filepath, encoding='cp949')
+        # 중복 제거 및 가나다 순 정렬
+        unique_stores = sorted(df['가맹점명'].dropna().unique())
+        
+        # 표시용 리스트와, '표시 이름' -> '원본 이름' 매핑용 딕셔너리 생성
+        display_list = [""] # Placeholder를 위한 빈 값
+        display_to_original_map = {}
+        
+        for name in unique_stores:
+            # 예: "본* (총 2글자)" 형식으로 표시 이름 생성
+            display_name = f"{name} (총 {len(name)}글자)"
+            display_list.append(display_name)
+            display_to_original_map[display_name] = name
+            
+        return df, display_list, display_to_original_map
+    except FileNotFoundError:
+        st.error(f"오류: '{filepath}' 파일을 찾을 수 없습니다.")
+        return None, None, None
+    except Exception as e:
+        st.error(f"데이터 로드 중 오류 발생: {e}")
+        return None, None, None
+
+# ----------------------------------------------------------------------
+# 3. 맞춤형 설명 분석(Parsing) 및 프롬프트 생성 함수
+# ----------------------------------------------------------------------
+def parse_full_description(full_desc):
+    """"맞춤형설명" 컬럼의 긴 텍스트를 파싱하여 딕셔너리로 반환합니다."""
+    parsed_data = {
+        "폐업 위험도": "데이터 없음", "주요 원인": "데이터 없음",
+        "고객유형": "데이터 없음", "경쟁력": "데이터 없음", "고객관계": "데이터 없음"
+    }
+    if pd.isna(full_desc):
+        return parsed_data
+    try:
+        pattern = re.compile(
+            r"폐업 위험도:\s*(.*?)\.\s*주요 원인:\s*(.*?)\.\s*고객유형:\s*(.*?),\s*경쟁력:\s*(.*?),\s*고객관계:\s*(.*)",
+            re.DOTALL
+        )
+        match = pattern.search(full_desc)
+        if match:
+            parsed_data["폐업 위험도"] = match.group(1).strip()
+            parsed_data["주요 원인"] = match.group(2).strip()
+            parsed_data["고객유형"] = match.group(3).strip()
+            parsed_data["경쟁력"] = match.group(4).strip()
+            parsed_data["고객관계"] = match.group(5).strip()
+        return parsed_data
+    except Exception as e:
+        st.error(f"맞춤형 설명 분석 중 오류 발생: {e}")
+        return parsed_data
+
+def generate_prompt(store_name, industry, open_date, close_date, 
+                    closure_risk, closure_factors, 
+                    customer_type, competitiveness, customer_relation,
+                    local_area_info,
+                    trend_analysis_text):
+    """AI에게 JSON 형식으로 구조화된 답변을 요청하는 프롬프트를 생성합니다."""
+    close_info = "현재 운영 중" if pd.isna(close_date) else f"폐업일: {close_date}"
+    prompt = f"""
+당신은 대한민국 소상공인을 위한 최고의 AI 전략 컨설턴트입니다.
+지금부터 내가 제공하는 정보를 종합적으로 분석하여 {store_name} 사장님을 위한
+맞춤형 전략 리포트를 JSON 형식으로 작성해주세요.
+
+[가맹점 기본 정보]
+- 가맹점명: {store_name}, 업종: {industry}, 개설일: {open_date}, {close_info}
+
+[AI 정밀 진단 요약]
+- 폐업 위험도: {closure_risk}, 주요 원인: {closure_factors}
+- 고객 유형: {customer_type}, 가게 경쟁력: {competitiveness}, 고객 관계: {customer_relation}
+- 현재 상권 현황: {local_area_info}
+
+[주요 지표 3개월 추세]
+{trend_analysis_text}
+
+[리포트 작성 가이드라인 (JSON 형식)]
+1. 반드시 아래와 같은 JSON 형식으로만 답변해주세요. JSON 외에 다른 텍스트를 포함하지 마세요.
+2. 'store_summary': 사장님 가게 유형을 한 문장으로 정의해주세요.
+3. 'risk_signal', 'opportunity_signal': 가장 중요한 위험/기회 신호 1가지씩을 넣어주세요.
+4. 'action_plan_detail': 구체적인 액션 플랜 1가지를 제안해주세요.
+5. 'fact_based_example': 위 'action_plan'과 유사한 전략으로 성공한 (사실 기반의) 타 업종 사례를 1~2줄로 요약해주세요.
+6. 'example_source': 위 성공 사례의 신뢰할 수 있는 출처(뉴스 기사, 블로그 등) URL을 반드시 포함해주세요.
+7. 'action_table': [단계, 실행 방안, 예상 비용]을 포함하는 마크다운 테이블 텍스트를 생성해주세요.
+8. 'expected_effect': 예상 기대효과를 구체적인 수치로 제시해주세요.
+9. 'encouragement': 사장님을 위한 따뜻한 응원의 메시지를 넣어주세요.
+
+{{
+  "store_summary": "...", "risk_signal": "...", "opportunity_signal": "...",
+  "action_plan_title": "핵심 액션 플랜: [제목]", "action_plan_detail": "[상세 설명]",
+  "fact_based_example": "[성공 사례 요약]",
+  "example_source": "https://www.example-news.com/article/123",
+  "action_table": "| 단계 | 실행 방안 | 예상 비용 |\\n|---|---|---|\\n| 1단계 | OOO 실행 | 10만원 |",
+  "expected_effect": "신규 고객 15% 증가", "encouragement": "..."
+}}
+"""
+    return prompt.strip()
+
+def format_value(value, unit="", default_text="데이터 없음"):
+    """st.metric 값을 포맷팅합니다."""
+    if pd.isna(value): return default_text
+    if unit == "%": return f"{value:.1f}%"
+    if unit == "구간": return f"{int(value)} {unit}"
+    return f"{value:.1f}"
+
+def format_trend(trend_value):
+    """st.metric의 delta 값을 포맷팅합니다."""
+    if pd.isna(trend_value): return None
+    return str(trend_value)
+
+# ----------------------------------------------------------------------
+# 4. 차트 생성 헬퍼 함수
+# ----------------------------------------------------------------------
+def plot_line_chart(ax, months, data_series, labels, title, colors, markers):
+    """반복적인 선 그래프 생성 로직을 처리하는 함수"""
+    for data, label, color, marker in zip(data_series, labels, colors, markers):
+        ax.plot(months, data, label=label, color=color, marker=marker)
+    ax.set_title(title, fontsize=12)
+    ax.legend(fontsize=9)
+    ax.tick_params(labelsize=9)
+    ax.grid(True, linestyle='--', alpha=0.5)
+
+def plot_bar_chart(ax, x, months, data_series, labels, title, colors):
+    """반복적인 막대 그래프 생성 로직을 처리하는 함수"""
+    bar_width = 0.4
+    ax.bar(x, data_series[0], label=labels[0], width=bar_width, color=colors[0])
+    ax.bar([i + bar_width for i in x], data_series[1], label=labels[1], width=bar_width, color=colors[1])
+    ax.set_title(title, fontsize=12)
+    ax.set_xticks([i + bar_width / 2 for i in x])
+    ax.set_xticklabels(months, fontsize=9)
+    ax.legend(fontsize=9)
+    ax.grid(True, axis='y', linestyle='--', alpha=0.5)
+
+# ----------------------------------------------------------------------
+# 5. UI 구성 함수 (리포트, 홈페이지)
+# ----------------------------------------------------------------------
+def show_report(store_data):
+    """상세 리포트 화면을 그립니다."""
+    if st.button("⬅️ 다른 가게 검색하기"):
+        st.session_state.selected_store = None
+        st.session_state.ai_report_data = None
+        st.rerun()
+
+    st.title(f"💡 '{st.session_state.selected_store}' 경영 진단 리포트")
+
+    full_desc_string = store_data.get('맞춤형설명', None)
+    parsed_data = parse_full_description(full_desc_string)
+
+    tab1, tab2, tab3 = st.tabs(["🎯 AI 정밀 진단 (요약)", "📈 상세 데이터 (최근 3개월)", "🤖 AI 맞춤 전략 리포트"])
+
+    with tab1:
+        st.header("🎯 AI 정밀 진단 요약")
+        st.markdown(f"**{store_data.get('업종', '업종정보 없음')}** 업종을 운영 중인 사장님 가게의 핵심 진단 결과입니다.")
+        st.divider()
+
+        st.subheader("🚨 폐업 위험도 분석")
+        risk_level = parsed_data['폐업 위험도']
+        risk_factors = parsed_data['주요 원인']
+        if "높음" in risk_level or "매우 높음" in risk_level: st.error(f"**{risk_level}**")
+        elif "낮음" in risk_level or "매우 낮음" in risk_level: st.success(f"**{risk_level}**")
+        else: st.info(f"**{risk_level}**")
+        st.caption(f"**주요 원인:** {risk_factors}")
+        st.divider()
+
+        st.subheader("🧬 3차원 정밀 진단")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("① 고객 유형", parsed_data['고객유형'])
+        col2.metric("② 가게 경쟁력", parsed_data['경쟁력'])
+        col3.metric("③ 고객 관계", parsed_data['고객관계'])
+        st.divider()
+        
+        st.subheader("🏘️ 우리 상권 현황")
+        local_info = store_data.get('상권내_주요업종', '데이터 없음') 
+        st.metric("상권 내 주요 업종 분포", local_info)
+        st.divider()
+
+        st.subheader("📊 주요 지표 최신 동향 (vs 3개월 전)")
+        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+        metric_col1.metric("업종 내 매출 순위 (1개월 전)", format_value(store_data.get('업종내매출순위비율_1m'), "%"), format_trend(store_data.get('업종내매출순위비율_추세')))
+        metric_col2.metric("재방문율 (1개월 전)", format_value(store_data.get('재방문율_1m'), "%"), format_trend(store_data.get('재방문율_추세')))
+        metric_col3.metric("신규 고객 비율 (1개월 전)", format_value(store_data.get('신규고객비율_1m'), "%"), format_trend(store_data.get('신규고객비율_추세')))
+        metric_col4.metric("매출 규모 (1개월 전)", format_value(store_data.get('매출금액구간_1m'), "구간"), format_trend(store_data.get('매출금액구간_추세')))
+
+    with tab2:
+        st.header("📈 상세 시계열 추이 분석 (최근 3개월)")
+        months = ['3개월 전', '2개월 전', '1개월 전']
+        x = range(len(months))
+        st.subheader("고객 및 상권 동향")
+        chart_col1, chart_col2, chart_col3 = st.columns(3)
+        with chart_col1:
+            data_list = [store_data.get(f'유동고객비율_{m}m') for m in [3,2,1]] + [store_data.get(f'직장고객비율_{m}m') for m in [3,2,1]] + [store_data.get(f'거주고객비율_{m}m') for m in [3,2,1]]
+            if pd.Series(data_list).notna().any():
+                fig, ax = plt.subplots(figsize=(5, 3))
+                plot_line_chart(ax, months, [data_list[0:3], data_list[3:6], data_list[6:9]], ['유동고객', '직장고객', '거주고객'], "고객 유형 비율", ['steelblue', 'gray', 'darkgreen'], ['o', 's', '^'])
+                fig.tight_layout()
+                st.pyplot(fig)
+            else: st.info("고객 유형 비율 데이터가 없습니다.")
+        with chart_col2:
+            data_list = [store_data.get(f'신규고객비율_{m}m') for m in [3,2,1]] + [store_data.get(f'재방문율_{m}m') for m in [3,2,1]]
+            if pd.Series(data_list).notna().any():
+                fig, ax = plt.subplots(figsize=(5, 3))
+                plot_line_chart(ax, months, [data_list[0:3], data_list[3:6]], ['신규고객', '재방문율'], "신규/재방문 고객", ['skyblue', 'salmon'], ['o', 's'])
+                fig.tight_layout()
+                st.pyplot(fig)
+            else: st.info("신규/재방문 고객 데이터가 없습니다.")
+        with chart_col3:
+            data_list = [store_data.get(f'상권내폐업비율_{m}m') for m in [3,2,1]] + [store_data.get(f'업종내폐업비율_{m}m') for m in [3,2,1]]
+            if pd.Series(data_list).notna().any():
+                fig, ax = plt.subplots(figsize=(5, 3))
+                plot_line_chart(ax, months, [data_list[0:3], data_list[3:6]], ['상권내폐업', '업종내폐업'], "폐업 비율", ['gray', 'black'], ['o', 's'])
+                fig.tight_layout()
+                st.pyplot(fig)
+            else: st.info("폐업 비율 데이터가 없습니다.")
+        st.divider()
+        st.subheader("매출 성과")
+        chart_col4, chart_col5 = st.columns(2)
+        with chart_col4:
+            data_list = [store_data.get(f'상권내매출순위비율_{m}m') for m in [3,2,1]] + [store_data.get(f'업종내매출순위비율_{m}m') for m in [3,2,1]]
+            if pd.Series(data_list).notna().any():
+                fig, ax = plt.subplots(figsize=(6, 3.5))
+                plot_bar_chart(ax, x, months, [data_list[0:3], data_list[3:6]], ['상권내', '업종내'], "매출 순위 비율 (상위 N%)", ['lightgray', 'steelblue'])
+                fig.tight_layout()
+                st.pyplot(fig)
+            else: st.info("매출 순위 비율 데이터가 없습니다.")
+        with chart_col5:
+            data_list = [store_data.get(f'매출건수구간_{m}m') for m in [3,2,1]] + [store_data.get(f'매출금액구간_{m}m') for m in [3,2,1]]
+            if pd.Series(data_list).notna().any():
+                fig, ax = plt.subplots(figsize=(6, 3.5))
+                plot_bar_chart(ax, x, months, [data_list[0:3], data_list[3:6]], ['건수', '금액'], "매출 건수/금액 (구간)", ['gray', 'darkgreen'])
+                fig.tight_layout()
+                st.pyplot(fig)
+            else: st.info("매출 건수/금액 데이터가 없습니다.")
+
+    with tab3:
+        st.header("🤖 AI 비밀상담사의 맞춤 전략 리포트")
+        st.markdown("위의 AI 정밀 진단과 상세 데이터를 바탕으로 AI가 사장님만을 위한 맞춤 전략을 제안합니다.")
+        def get_trend_str(col_name):
+            val = store_data.get(col_name)
+            return str(val) if not pd.isna(val) else "데이터 없음"
+        trend_analysis_text = "\n".join([f"- {col.replace('_', ' ')}: {get_trend_str(col)}" for col in store_data.index if '추세' in col])
+        prompt = generate_prompt(
+            store_name=store_data.get('가맹점명'), industry=store_data.get('업종'),
+            open_date=store_data.get('개설일'), close_date=store_data.get('폐업일'),
+            closure_risk=parsed_data['폐업 위험도'], closure_factors=parsed_data['주요 원인'],
+            customer_type=parsed_data['고객유형'], competitiveness=parsed_data['경쟁력'],
+            customer_relation=parsed_data['고객관계'],
+            local_area_info=store_data.get('상권내_주요업종', '데이터 없음'), 
+            trend_analysis_text=trend_analysis_text
+        )
+
+        if st.button("🚀 AI 전략 리포트 생성하기"):
+            my_bar = st.progress(0, text="AI 분석을 시작합니다. 잠시만 기다려주세요...")
+            try:
+                for percent_complete in range(1, 81):
+                    time.sleep(0.02)
+                    text = "Gemini AI와 연결 중입니다..."
+                    if percent_complete > 40: text = "사장님의 데이터를 안전하게 전송하고 있습니다..."
+                    my_bar.progress(percent_complete, text=text)
+                my_secret_key = st.secrets["GOOGLE_API_KEY"]
+                genai.configure(api_key=my_secret_key)
+                model = genai.GenerativeModel('gemini-2.5-flash')
+                my_bar.progress(85, text="AI가 리포트를 생성하는 중입니다...")
+                response = model.generate_content(prompt)
+                my_bar.progress(95, text="AI의 답변을 분석하고 있습니다...")
+                cleaned_text = response.text.strip().replace("```json", "").replace("```", "")
+                report_data = json.loads(cleaned_text)
+                st.session_state.ai_report_data = report_data
+                my_bar.progress(100, text="분석 완료!")
+                time.sleep(1)
+                my_bar.empty()
+            except json.JSONDecodeError:
+                my_bar.empty()
+                st.error("AI가 JSON 형식으로 응답하지 않았습니다. 원본 응답을 표시합니다.")
+                if 'response' in locals(): st.markdown(response.text)
+                st.session_state.ai_report_data = None
+            except Exception as e:
+                my_bar.empty()
+                st.error(f"AI 리포트 생성 중 오류 발생: {e}")
+                st.session_state.ai_report_data = None
+
+        if "ai_report_data" in st.session_state and st.session_state.ai_report_data:
+            report_data = st.session_state.ai_report_data
+            st.subheader("💡 최종 분석 결과")
+            with st.chat_message("ai"):
+                st.subheader("💬 사장님 가게 요약")
+                st.info(report_data.get("store_summary", "요약 정보 없음"))
+                st.subheader("🚦 위험 및 기회 신호")
+                st.error(report_data.get("risk_signal", "위험 신호 없음"))
+                st.success(report_data.get("opportunity_signal", "기회 신호 없음"))
+                st.subheader(report_data.get("action_plan_title", "핵심 액션 플랜"))
+                st.write(report_data.get("action_plan_detail", ""))
+                st.subheader("📚 참고: 유사 전략 성공 사례")
+                st.warning(f"💡 {report_data.get('fact_based_example', '관련 사례 없음')}")
+                
+                # [수정] 출처 URL 표시
+                source_url = report_data.get("example_source")
+                if source_url and "http" in source_url:
+                    st.caption(f"출처: [{source_url}]({source_url})")
+
+                st.markdown(report_data.get("action_table", "실행 계획 없음"))
+                st.subheader("📈 예상 기대효과")
+                st.success(f'**목표:** {report_data.get("expected_effect", "데이터 없음")}')
+                st.markdown("---")
+                st.write(f"**AI 상담사의 응원 메시지:** {report_data.get('encouragement', '')}")
+
+        # [수정] st.text_area에 disabled=True 파라미터 추가
+        with st.expander("AI에게 전달된 프롬프트 내용 보기 (디버깅용)"):
+            st.text_area("프롬프트 내용", prompt, height=300, disabled=True)
+
+def show_homepage(display_list, display_to_original_map):
+    """앱의 메인 화면(검색 페이지)을 그립니다."""
+    st.markdown("<h1 style='text-align: center; color: #4B0082;'>💡 내 가게를 살리는 AI 비밀상담사</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>다른 사장님들은 무엇을 검색했을까요?</h3>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center; color: purple;'># 우리 가게 경영 진단</h4>", unsafe_allow_html=True)
+    st.markdown("---")
+
+    selection = st.selectbox(
+        "🔍 분석할 가게 이름을 검색하거나 목록에서 선택하세요.",
+        options=display_list,
+        placeholder="가게 이름의 앞부분을 입력하면 관련 목록이 나옵니다..."
+    )
+
+    st.info(
+        "**검색 방법 안내**\n\n"
+        "1. 검색창에 가게 이름의 **앞부분**을 입력하면 관련된 목록이 나타납니다. (예: `본죽`)\n"
+        "2. 목록에서 사장님 가게의 **정확한 글자 수**를 확인하고 선택해주세요.\n\n"
+        "--- \n"
+        "**💡 왜 이름이 `***`로 나오나요?**\n\n"
+        "데이터 개인정보 보호를 위해 가맹점명이 마스킹 처리되었습니다. "
+        "글자 수로 구분하여 본인의 가게를 선택하시면 정확한 분석이 가능합니다."
+    )
+
+    if selection:
+        if st.button(f"🚀 '{selection}' 경영 진단 리포트 보기"):
+            original_masked_name = display_to_original_map[selection]
+            st.session_state.selected_store = original_masked_name
+            st.rerun()
+
+# ----------------------------------------------------------------------
+# 6. 메인 실행 로직
+# ----------------------------------------------------------------------
+def main():
+    if 'selected_store' not in st.session_state:
+        st.session_state.selected_store = None
+        st.session_state.ai_report_data = None
+
+    data, display_list, display_to_original_map = load_data("최종데이터.csv")
+    if data is None:
+        st.stop()
+
+    if st.session_state.selected_store is None:
+        show_homepage(display_list, display_to_original_map)
+    else:
+        try:
+            store_data_row = data[data['가맹점명'] == st.session_state.selected_store].iloc[0]
+            show_report(store_data_row)
+        except (IndexError, KeyError) as e:
+            st.error("선택한 가게 정보를 찾는 데 실패했습니다. 다시 검색해주세요.")
+            st.session_state.selected_store = None
+            if st.button("홈으로 돌아가기"):
+                st.rerun()
+
+if __name__ == "__main__":
+    main()
+
