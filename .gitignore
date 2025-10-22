@@ -1,0 +1,10 @@
+# Streamlit secrets should not be uploaded
+.streamlit/
+
+# Python virtual environment
+venv/
+*.venv/
+
+# Python cache files
+__pycache__/
+*.pyc
