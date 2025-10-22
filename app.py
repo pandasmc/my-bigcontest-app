@@ -7,9 +7,13 @@ import re
 import json
 import time
 
-# 경고 메시지 무시 및 한글 폰트 설정
+# 경고 메시지 무시
 warnings.filterwarnings('ignore')
-plt.rcParams['font.family'] = 'Malgun Gothic' # Windows
+
+# ----------------------------------------------------------------------
+# [수정] 한글 폰트 설정 (Streamlit Cloud 호환)
+# ----------------------------------------------------------------------
+plt.rcParams['font.family'] = 'NanumGothic' # Windows의 'Malgun Gothic' 대신 Nanum 폰트 사용
 plt.rcParams['axes.unicode_minus'] = False  # Minus sign 깨짐 방지
 
 
@@ -320,19 +324,15 @@ def show_report(store_data):
                 st.write(report_data.get("action_plan_detail", ""))
                 st.subheader("📚 참고: 유사 전략 성공 사례")
                 st.warning(f"💡 {report_data.get('fact_based_example', '관련 사례 없음')}")
-                
-                # [수정] 출처 URL 표시
                 source_url = report_data.get("example_source")
                 if source_url and "http" in source_url:
                     st.caption(f"출처: [{source_url}]({source_url})")
-
                 st.markdown(report_data.get("action_table", "실행 계획 없음"))
                 st.subheader("📈 예상 기대효과")
                 st.success(f'**목표:** {report_data.get("expected_effect", "데이터 없음")}')
                 st.markdown("---")
                 st.write(f"**AI 상담사의 응원 메시지:** {report_data.get('encouragement', '')}")
 
-        # [수정] st.text_area에 disabled=True 파라미터 추가
         with st.expander("AI에게 전달된 프롬프트 내용 보기 (디버깅용)"):
             st.text_area("프롬프트 내용", prompt, height=300, disabled=True)
 
