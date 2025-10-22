@@ -265,9 +265,9 @@ def show_report(store_data, data):
         st.divider()
         
         st.subheader("🏘️ 우리 상권 현황")
-        current_district = store_data.get('상권명') 
+        current_district = store_data.get('상권') 
         if current_district and not pd.isna(current_district):
-            district_df = data[data['상권명'] == current_district]
+            district_df = data[data['상권'] == current_district]
             top_5_industries = district_df['업종'].value_counts().nlargest(5).rename_axis('업종').reset_index(name='가게 수')
             if not top_5_industries.empty:
                 st.write(f"**'{current_district}' 상권의 주요 업종 Top 5**")
@@ -351,7 +351,7 @@ def show_report(store_data, data):
         
         local_info_for_prompt = "데이터 없음"
         if current_district and not pd.isna(current_district):
-            district_df = data[data['상권명'] == current_district]
+            district_df = data[data['상권'] == current_district]
             top_5_industries = district_df['업종'].value_counts().nlargest(5)
             if not top_5_industries.empty:
                 local_info_for_prompt = ", ".join([f"{index} ({value}개)" for index, value in top_5_industries.items()])
