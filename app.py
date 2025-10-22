@@ -6,7 +6,8 @@ import warnings
 import re
 import json
 import time
-import matplotlib.font_manager as fm # 폰트 캐시 재빌드를 위해 추가
+# [수정] 아래 라인 삭제
+# import matplotlib.font_manager as fm # 폰트 캐시 재빌드를 위해 추가
 
 # 경고 메시지 무시
 warnings.filterwarnings('ignore')
@@ -14,8 +15,8 @@ warnings.filterwarnings('ignore')
 # ----------------------------------------------------------------------
 # [수정] 한글 폰트 설정 (Streamlit Cloud 호환)
 # ----------------------------------------------------------------------
-# 폰트 캐시를 다시 빌드하여 Nanum 폰트를 인식하게 함
-fm._rebuild()
+# [수정] 오류를 일으키는 fm._rebuild() 라인 삭제
+# fm._rebuild()
 plt.rcParams['font.family'] = 'NanumGothic'
 plt.rcParams['axes.unicode_minus'] = False
 
