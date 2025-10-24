@@ -631,8 +631,8 @@ def show_homepage(display_list, display_to_original_map):
     """앱의 메인 화면(검색 페이지)을 그립니다."""
     st.markdown("<h1 style='text-align: center; color: var(--primary-color);'>💡 내 가게를 살리는 AI 비밀상담사</h1>", unsafe_allow_html=True)
     
-    # 1. 소제목
-    st.markdown("<h3 style='text-align: center; color: var(--gray-70);'>▼ 요즘 뜨는 키워드 ▼</h3>", unsafe_allow_html=True)
+    # 1. 소제목 (위아래 간격을 0으로 만듭니다)
+    st.markdown("<h3 style='text-align: center; color: var(--gray-70); margin-bottom: 0px;'>▼ 요즘 뜨는 키워드 ▼</h3>", unsafe_allow_html=True)
 
     # 2. 여기에 표시할 해시태그를 원하는 대로 수정하세요.
     hashtags = [
@@ -646,18 +646,18 @@ def show_homepage(display_list, display_to_original_map):
     # 3. 현재 Streamlit 테마('light' 또는 'dark')를 가져옵니다.
     current_theme = st.get_option("theme.base")
 
-    # 4. [수정] components.html에 들어갈 내용
+    # 4. components.html에 들어갈 내용
     html_content = f"""
     <html>
     <head>
         <style>
-            /* 1. body 초기화 */
             html, body {{ 
                 margin: 0; 
                 padding: 0; 
-                height: 100%; 
             }}
-            /* 2. [핵심] 컨테이너에 padding-top을 주어 중앙 정렬 */
+            /* [핵심] 컨테이너에 margin-top/bottom을 주어
+             소제목/구분선과의 간격을 직접 조절합니다.
+            */
             .hashtag-container {{
                 text-align: center;
                 height: 40px; /* 텍스트 높이 40px */
@@ -665,9 +665,8 @@ def show_homepage(display_list, display_to_original_map):
                 position: relative; 
                 overflow: hidden;
                 
-                /* iframe 높이(60px) - 텍스트 높이(40px) = 20px */
-                /* 위쪽 여백을 10px 줘서 중앙 정렬 */
-                padding-top: 10px; 
+                margin-top: 5px; /* 소제목과의 간격 */
+                margin-bottom: 20px; /* 구분선과의 간격 */
             }}
             .hashtag-item {{
                 font-size: 1.8em; 
@@ -677,7 +676,7 @@ def show_homepage(display_list, display_to_original_map):
                 position: absolute; 
                 width: 100%; 
                 left: 0;
-                top: 10px; /* [수정] padding-top 값과 동일하게 맞춰줌 */
+                top: 0; /* [수정] top: 0으로 리셋 */
                 
                 opacity: 0; 
                 transition: opacity 0.5s ease-in-out; 
@@ -686,7 +685,7 @@ def show_homepage(display_list, display_to_original_map):
                 opacity: 1; 
             }}
             
-            /* 3. 다크 모드 CSS */
+            /* 다크 모드 CSS */
             body.dark .hashtag-item {{
                 color: #E6E6FA; /* 다크: 연보라 */
             }}
@@ -703,14 +702,11 @@ def show_homepage(display_list, display_to_original_map):
                 const container = document.getElementById('hashtag-slider');
 
                 if (!container) {{
-                    // 요소를 못 찾았으면 0.3초 뒤에 다시 시도
                     setTimeout(startHashtagSlider, 300);
                     return; 
                 }}
                 
-                // [성공] 요소를 찾았으니 플래그 올리고 실행
                 window.hashtagSliderInitialized = true; 
-                
                 const tags = {json.dumps(hashtags)};
                 let currentIndex = 0;
 
@@ -737,18 +733,15 @@ def show_homepage(display_list, display_to_original_map):
                     }}
                 }}, 2500); 
             }}
-
-            // 함수를 최초 1회 실행
             startHashtagSlider();
         </script>
     </body>
     </html>
     """
     
-    # 5. components.html로 실행
-    # (iframe 높이 60px)
-    components.html(html_content, height=60)
-
+    # 5. [수정] components.html의 height를 None (auto)으로 설정
+    components.html(html_content, height=None)
+    
     st.markdown("---") # 구분선
 
     selection = st.selectbox(
