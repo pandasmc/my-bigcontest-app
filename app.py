@@ -643,103 +643,112 @@ def show_homepage(display_list, display_to_original_map):
         "#요즘뜨는전시"
     ]
     
-    # 3. [!!!핵심!!!] 현재 Streamlit 테마('light' 또는 'dark')를 가져옵니다.
+    # 3. 현재 Streamlit 테마('light' 또는 'dark')를 가져옵니다.
     current_theme = st.get_option("theme.base")
 
-    # 4. [수정] st.markdown 대신 components.html을 사용합니다.
+    # 4. [수정] components.html에 들어갈 내용
     html_content = f"""
-    <style>
-        html, body {{ 
-            margin: 0; 
-            padding: 0; 
-            height: 100%; /* 1. body가 iframe(60px) 높이를 꽉 채우게 함 */
+    <html>
+    <head>
+        <style>
+            /* 1. body 초기화 */
+            html, body {{ 
+                margin: 0; 
+                padding: 0; 
+                height: 100%; 
+            }}
+            /* 2. [핵심] 컨테이너에 padding-top을 주어 중앙 정렬 */
+            .hashtag-container {{
+                text-align: center;
+                height: 40px; /* 텍스트 높이 40px */
+                width: 100%;
+                position: relative; 
+                overflow: hidden;
+                
+                /* iframe 높이(60px) - 텍스트 높이(40px) = 20px */
+                /* 위쪽 여백을 10px 줘서 중앙 정렬 */
+                padding-top: 10px; 
+            }}
+            .hashtag-item {{
+                font-size: 1.8em; 
+                font-weight: bold; 
+                color: #4B0082; /* 라이트 모드 기본 */
+                
+                position: absolute; 
+                width: 100%; 
+                left: 0;
+                top: 10px; /* [수정] padding-top 값과 동일하게 맞춰줌 */
+                
+                opacity: 0; 
+                transition: opacity 0.5s ease-in-out; 
+            }}
+            .hashtag-item.active {{ 
+                opacity: 1; 
+            }}
             
-            /* 2. [추가] flex를 이용해 자식 요소를 세로 중앙 정렬 */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }}
-        .hashtag-container {{
-            text-align: center;
-            height: 40px; 
-            width: 100%; /* 3. [추가] 가로 폭을 꽉 채움 */
-            position: relative; 
-            overflow: hidden;
-        }}
-        .hashtag-item {{
-            font-size: 1.8em; 
-            font-weight: bold; 
-            /* [수정] 기본색(라이트모드)을 고정 보라색으로 지정 */
-            color: #4B0082; 
-            
-            position: absolute; 
-            width: 100%; 
-            left: 0;
-            top: 0; 
-            
-            opacity: 0; 
-            transition: opacity 0.5s ease-in-out; 
-        }}
-        .hashtag-item.active {{ 
-            opacity: 1; 
-        }}
-        
-        /* [!!!핵심!!!] body 태그의 클래스가 'dark'일 때만 색상을 변경 */
-        body.dark .hashtag-item {{
-            /* 다크모드일 때는 연한 보라색(라벤더)으로 표시 */
-            color: #E6E6FA;
-        }}
-    </style>
-
+            /* 3. 다크 모드 CSS */
+            body.dark .hashtag-item {{
+                color: #E6E6FA; /* 다크: 연보라 */
+            }}
+        </style>
+    </head>
     <body class="{current_theme}">
         <div class="hashtag-container" id="hashtag-slider">
             </div>
-    </body>
 
-    <script>
-        // (스크립트 내용은 이전과 동일합니다)
-        function startHashtagSlider() {{
-            if (window.hashtagSliderInitialized) return;
-            const container = document.getElementById('hashtag-slider');
-            if (!container) {{
-                setTimeout(startHashtagSlider, 300);
-                return; 
+        <script>
+            // "폴링" 방식으로 스크립트를 실행
+            function startHashtagSlider() {{
+                if (window.hashtagSliderInitialized) return;
+                const container = document.getElementById('hashtag-slider');
+
+                if (!container) {{
+                    // 요소를 못 찾았으면 0.3초 뒤에 다시 시도
+                    setTimeout(startHashtagSlider, 300);
+                    return; 
+                }}
+                
+                // [성공] 요소를 찾았으니 플래그 올리고 실행
+                window.hashtagSliderInitialized = true; 
+                
+                const tags = {json.dumps(hashtags)};
+                let currentIndex = 0;
+
+                tags.forEach((tag, index) => {{
+                    const span = document.createElement('span');
+                    span.className = 'hashtag-item';
+                    span.textContent = tag;
+                    if (index === 0) {{
+                        span.classList.add('active'); 
+                    }}
+                    container.appendChild(span);
+                }});
+
+                const items = container.querySelectorAll('.hashtag-item');
+                const totalItems = items.length;
+
+                setInterval(() => {{
+                    if(items[currentIndex]) {{
+                        items[currentIndex].classList.remove('active');
+                    }}
+                    currentIndex = (currentIndex + 1) % totalItems;
+                    if(items[currentIndex]) {{
+                        items[currentIndex].classList.add('active');
+                    }}
+                }}, 2500); 
             }}
-            
-            window.hashtagSliderInitialized = true; 
-            const tags = {json.dumps(hashtags)};
-            let currentIndex = 0;
 
-            tags.forEach((tag, index) => {{
-                const span = document.createElement('span');
-                span.className = 'hashtag-item';
-                span.textContent = tag;
-                if (index === 0) {{
-                    span.classList.add('active'); 
-                }}
-                container.appendChild(span);
-            }});
-
-            const items = container.querySelectorAll('.hashtag-item');
-            const totalItems = items.length;
-
-            setInterval(() => {{
-                if(items[currentIndex]) {{
-                    items[currentIndex].classList.remove('active');
-                }}
-                currentIndex = (currentIndex + 1) % totalItems;
-                if(items[currentIndex]) {{
-                    items[currentIndex].classList.add('active');
-                }}
-            }}, 2500); 
-        }}
-        startHashtagSlider();
-    </script>
+            // 함수를 최초 1회 실행
+            startHashtagSlider();
+        </script>
+    </body>
+    </html>
     """
     
     # 5. components.html로 실행
+    # (iframe 높이 60px)
     components.html(html_content, height=60)
-    
+
     st.markdown("---") # 구분선
 
     selection = st.selectbox(
