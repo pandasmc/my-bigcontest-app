@@ -262,34 +262,37 @@ def show_report(store_data, data):
     .bar-chart-bar { background-color: #5c9ce5; height: 20px; border-radius: 5px; }
 
     /* ---------------------------------- */
-    /* 탭 스타일 꾸미기 (글자 크기 + 디자인) */
+    /* 탭 스타일 */
     /* ---------------------------------- */
-
-    /* 1. 탭 버튼 기본 스타일 (글자 크기, 패딩 등) */
-    button[data-baseweb="tab"] {
-      font-size: 3.5em !important; 
-      font-weight: bold;
-      padding-top: 12px;
-      padding-bottom: 12px;
+    
+    /* 1. 탭 버튼 기본 스타일 (글자 크기, 패딩, hover 전환 효과) */
+    div[data-testid="stTabs"] button {
+        font-size: 2.0em !important;   /* [수정] 3.5em은 너무 크니 2.0em으로 시작. (작동 확인 후 3.5em으로 키워보세요) */
+        font-weight: bold;
+        padding-top: 15px !important;
+        padding-bottom: 15px !important;
+        transition: transform 0.2s ease-in-out, background-color 0.2s; /* [추가] hover 효과 */
     }
 
-    /* 2. 현재 선택된 탭 스타일 */
-    button[data-baseweb="tab"][aria-selected="true"] {
-      font-size: 3.5em !important;
-      background-color: #f0f2f6;
-      border-radius: 8px 8px 0 0;
-      border-bottom: 3px solid #4B0082; 
-      color: #4B0082;
+    /* 2. 탭에 마우스를 올렸을 때 (선택 안 된 탭) */
+    div[data-testid="stTabs"] button:hover:not([aria-selected="true"]) {
+        transform: scale(1.1);  /* [추가] 1.1배 확대 */
+        background-color: #fafafa !important; /* !important 추가 */
+        color: #555;
     }
 
-    /* 3. 탭에 마우스를 올렸을 때 (선택되지 않은 탭) */
-    button[data-baseweb="tab"]:hover:not([aria-selected="true"]) {
-      background-color: #fafafa;
-      color: #555;
+    /* 3. 현재 선택된 탭 스타일 (hover 효과 없음) */
+    div[data-testid="stTabs"] button[aria-selected="true"] {
+        font-size: 2.0em !important; /* [수정] 여기도 동일하게! */
+        background-color: #f0f2f6;
+        border-radius: 8px 8px 0 0;
+        border-bottom: 3px solid #4B0082; 
+        color: #4B0082;
+        transform: none; /* 선택된 탭은 커지지 않음 */
     }
     
-    /* 4. 탭 전체를 감싸는 바닥 선 (구분선) */
-    .stTabs .st-emotion-cache-1gwan2n {
+    /* 4. 탭 전체를 감싸는 바닥 선 (안정적인 선택자로 변경) */
+    div[data-testid="stTabs"] > div:first-child {
        border-bottom: 2px solid #e1e4e8;
     }
 
