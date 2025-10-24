@@ -203,29 +203,33 @@ def show_report(store_data, data):
     # [수정] UI/UX 개선을 위한 맞춤형 CSS
     st.markdown("""
     <style>
-    /* 전체 배경 흰색으로 고정 */
-    body {
-        background-color: #FFFFFF;
-    }
+    /* ---------------------------------- */
+    /* 1. 기본/메트릭 (테마 호환) */
+    /* ---------------------------------- */
     .stApp {
-        background-color: #FFFFFF;
+        background-color: var(--background-color);
     }
-
-    /* 메트릭 박스 기본 스타일 */
     .metric-box {
         border-radius: 10px; padding: 15px;
         text-align: center; height: 100%;
         display: flex; flex-direction: column; justify-content: center;
-        border: 1px solid #e1e4e8;
-        background-color: #f6f8fa;
+        border: 1px solid var(--gray-30);
+        background-color: var(--secondary-background-color); /* [수정] 테마 호환 */
         transition: box-shadow 0.3s ease-in-out;
     }
     .metric-box:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .metric-label { font-size: 0.9em; color: #586069; margin-bottom: 8px; font-weight: bold; }
-    .metric-value { font-size: 1.5em; font-weight: 600; color: #24292e; word-wrap: break-word; margin-bottom: 8px; }
+    .metric-label { 
+        font-size: 0.9em; 
+        color: var(--gray-70); /* [수정] 테마 호환 */
+        margin-bottom: 8px; font-weight: bold; 
+    }
+    .metric-value { 
+        font-size: 1.5em; font-weight: 600; 
+        color: var(--text-color); /* [수정] 테마 호환 */
+        word-wrap: break-word; margin-bottom: 8px; 
+    }
     .metric-trend { font-size: 0.9em; line-height: 1.5; }
     
-    /* 파스텔톤 배경색 (테두리에만 적용) */
     .box-color-1 { border-left: 5px solid #85C1E9; } 
     .box-color-2 { border-left: 5px solid #82E0AA; } 
     .box-color-3 { border-left: 5px solid #F7DC6F; } 
@@ -233,11 +237,13 @@ def show_report(store_data, data):
     .box-color-5 { border-left: 5px solid #D7BDE2; } 
     .box-color-6 { border-left: 5px solid #A3E4D7; } 
 
-    /* 폐업 위험도 박스 스타일 */
+    /* ---------------------------------- */
+    /* 2. 폐업 위험도 (라이트 모드) */
+    /* ---------------------------------- */
     .risk-container {
         border-radius: 10px; padding: 20px;
         display: flex; align-items: center;
-        border: 1px solid #e1e4e8;
+        border: 1px solid var(--gray-30);
     }
     .risk-level {
         flex: 2;
@@ -247,102 +253,108 @@ def show_report(store_data, data):
     .risk-factors {
         flex: 5;
         padding-left: 20px;
-        border-left: 1px solid #e1e4e8;
+        border-left: 1px solid var(--gray-30);
     }
+    /* 라이트모드 기본값 */
     .risk-low { color: #0050b3; background-color: #e6f7ff; }
     .risk-high { color: #a8071a; background-color: #fff1f0; }
     .risk-medium { color: #237804; background-color: #f6ffed; }
     .risk-default { color: #595959; background-color: #fafafa; }
 
-    /* 상권 현황 바 차트 스타일 */
-    .bar-chart-container { border: 1px solid #e1e4e8; border-radius: 10px; padding: 20px; }
-    .bar-chart-header { display: flex; font-weight: bold; color: #586069; margin-bottom: 10px; }
+    /* ---------------------------------- */
+    /* 3. 상권 현황 (테마 호환) */
+    /* ---------------------------------- */
+    .bar-chart-container { border: 1px solid var(--gray-30); border-radius: 10px; padding: 20px; }
+    .bar-chart-header { display: flex; font-weight: bold; color: var(--gray-70); margin-bottom: 10px; }
     .bar-chart-row { display: flex; align-items: center; margin-bottom: 8px; font-size: 0.9em; }
     .bar-chart-label { flex: 2; text-align: left; padding-right: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .bar-chart-bar-container { flex: 5; background-color: #eaf0f4; border-radius: 5px; }
+    .bar-chart-bar-container { flex: 5; background-color: var(--gray-20); border-radius: 5px; }
     .bar-chart-bar { background-color: #5c9ce5; height: 20px; border-radius: 5px; }
+    
+    /* ---------------------------------- */
+    /* 4. 차트 확대 효과 (기존과 동일) */
+    /* ---------------------------------- */
+    .zoom-chart {
+      transition: transform 0.2s ease-in-out; 
+      cursor: zoom-in;
+    }
+    .zoom-chart:hover {
+      transform: scale(1.15); 
+      z-index: 10; position: relative; 
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      border-radius: 5px;
+    }
 
     /* ---------------------------------- */
-    /* [수정] 탭 스타일 (모던 "Pill" 디자인) */
+    /* 5. 탭 스타일 (라이트 모드) */
     /* ---------------------------------- */
-
-    /* 1. 탭 버튼 기본 스타일 (모양, 간격, 투명 배경) */
     div[data-testid="stTabs"] button {
-        background-color: transparent !important; /* [수정] 배경 투명하게 */
-        border: none !important;                  /* [수정] 테두리 제거 */
-        border-radius: 8px !important;           /* [추가] 모서리를 둥글게 (Hover/Selected 시 보임) */
-        
-        /* 간격은 그대로 유지 */
+        background-color: transparent !important; 
+        border: none !important;                 
+        border-radius: 8px !important;           
         padding-top: 0.5em !important;    
         padding-bottom: 0.5em !important; 
         padding-left: 0.75em !important;  
         padding-right: 0.75em !important; 
         margin-right: 5px !important;     
-        
         transition: transform 0.2s ease-in-out, background-color 0.2s;
     }
-
-    /* 2. 탭 버튼 내부의 텍스트 DIV */
     div[data-testid="stTabs"] button > div {
-        font-size: 1.5em !important;  
+        font-size: 1.2em !important;   
         font-weight: bold !important;
-        color: #555 !important;   
+        color: var(--gray-70) !important; /* [수정] 테마 호환 */
     }
-
-    /* 3. 탭에 마우스를 올렸을 때 (선택 안 된 탭) */
     div[data-testid="stTabs"] button:hover:not([aria-selected="true"]) {
-        transform: scale(1.1); /* [수정] 1.1배 확대 (1.3은 너무 컸어요) */
-        background-color: #f0f2f6 !important; /* [수정] 호버 시 연한 회색 배경 */
+        transform: scale(1.1); 
+        background-color: var(--gray-20) !important; /* [수정] 테마 호환 */
     }
-
-    /* 4. 현재 선택된 탭 스타일 (연보라 배경 + 진보라 글씨) */
     div[data-testid="stTabs"] button[aria-selected="true"] {
-        background-color: #E6E6FA !important;    /* [수정] 연한 보라색 (라벤더) */
-        border: none !important;
-        border-radius: 8px !important;
+        background-color: #E6E6FA !important;    /* 라이트: 연보라 배경 */
+        border: 1px solid #D8BFD8 !important; 
+        border-radius: 8px !important;           
         transform: none; 
-
     }
-    
-    /* 4-1. (선택된 탭) 폰트 색 */
     div[data-testid="stTabs"] button[aria-selected="true"] > div {
-        color: #4B0082 !important; /* [수정] 진한 보라색 글씨 */
+        color: #4B0082 !important; /* 라이트: 진보라 글씨 */
     }
-    
-    /* 5. 탭 전체를 감싸는 바닥 선 */
     div[data-testid="stTabs"] > div:first-child {
-       border-bottom: 2px solid #e1e4e8;
-       margin-bottom: 10px; /* 탭과 탭 내용 사이 간격 살짝 추가 */
+       border-bottom: 2px solid var(--gray-30);
+       margin-bottom: 10px;
     }
 
     /* ---------------------------------- */
-    /* [추가] 차트 hover 시 확대 효과 */
+    /* 6. 제목/탭 간격 (기존과 동일) */
     /* ---------------------------------- */
-    .zoom-chart {
-      transition: transform 0.2s ease-in-out; /* 부드러운 효과 */
-      cursor: zoom-in;
-    }
-    .zoom-chart:hover {
-      transform: scale(1.15); /* 115%로 확대 */
-      z-index: 10; /* 다른 요소 위로 올라오도록 함 */
-      position: relative; /* z-index 적용을 위해 */
-      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-      border-radius: 5px;
-    }
-    
-    /* ---------------------------------- */
-    /* [추가] 제목/탭/내용 간격 띄우기 */
-    /* ---------------------------------- */
-
-    /* 1. 제목 (타이틀) 아래 간격 */
     div[data-testid="stTitle"] {
-      margin-bottom: 25px !important; /* 제목과 탭 사이 25px 띄우기 */
+      margin-bottom: 25px !important; 
+    }
+    div[data-testid="stTabs"] {
+      margin-bottom: 25px !important; 
     }
 
-    /* 2. 탭 메뉴 자체의 아래 간격 */
-    /* (탭 메뉴와 탭 내부의 'AI 정밀 진단 요약' 헤더 사이) */
-    div[data-testid="stTabs"] {
-      margin-bottom: 25px !important; /* 탭과 탭 내용 사이 25px 띄우기 */
+    /* ---------------------------------- */
+    /* 7. [!!!핵심!!!] 다크 모드 오버라이드 */
+    /* ---------------------------------- */
+    @media (prefers-color-scheme: dark) {
+        /* 다크모드일 때 .metric-box 테두리 */
+        .metric-box {
+            border: 1px solid var(--gray-70);
+        }
+
+        /* 다크모드일 때 폐업 위험도 색상 반전 */
+        .risk-low { color: #91d5ff; background-color: #111a2c; }
+        .risk-high { color: #ffa39e; background-color: #2c1618; }
+        .risk-medium { color: #b7eb8f; background-color: #1a2b16; }
+        .risk-default { color: #fafafa; background-color: #262730; }
+
+        /* 다크모드일 때 탭 버튼 색상 반전 */
+        div[data-testid="stTabs"] button[aria-selected="true"] {
+            background-color: #4B0082 !important;    /* 다크: 진보라 배경 */
+            border: 1px solid #E6E6FA !important; 
+        }
+        div[data-testid="stTabs"] button[aria-selected="true"] > div {
+            color: #E6E6FA !important; /* 다크: 연보라 글씨 */
+        }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -616,10 +628,10 @@ def show_report(store_data, data):
 
 def show_homepage(display_list, display_to_original_map):
     """앱의 메인 화면(검색 페이지)을 그립니다."""
-    st.markdown("<h1 style='text-align: center; color: #4B0082;'>💡 내 가게를 살리는 AI 비밀상담사</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: var(--primary-color);'>💡 내 가게를 살리는 AI 비밀상담사</h1>", unsafe_allow_html=True)
     
     # 1. 소제목
-    st.markdown("<h3 style='text-align: center; color: #555;'>▼ 요즘 뜨는 키워드 ▼</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: var(--gray-70);'>▼ 요즘 뜨는 키워드 ▼</h3>", unsafe_allow_html=True)
 
     # 2. 여기에 표시할 해시태그를 원하는 대로 수정하세요.
     hashtags = [
@@ -647,7 +659,7 @@ def show_homepage(display_list, display_to_original_map):
         .hashtag-item {{
             font-size: 1.8em; 
             font-weight: bold; 
-            color: #4B0082; 
+            color: var(--primary-color);
             
             position: absolute; 
             width: 100%; 
