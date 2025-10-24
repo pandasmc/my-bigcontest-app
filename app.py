@@ -634,56 +634,50 @@ def show_homepage(display_list, display_to_original_map):
     # 3. 아래 코드가 HTML/CSS/JS를 앱에 삽입합니다.
     html_content = f"""
     <style>
-        /* 슬라이드 쇼 컨테이너 스타일 */
+        /* ... (CSS 스타일은 이전과 동일) ... */
         .hashtag-container {{
-            text-align: center;
-            margin-top: 5px !important; /* 소제목과 간격을 좁힘 */
-            margin-bottom: 20px !important;
-            height: 40px; /* 글자가 바뀌어도 레이아웃이 점프하지 않도록 고정 높이 */
-            position: relative; /* 내부 아이템의 위치 기준 */
-            overflow: hidden; /* 영역 밖으로 나가는 것 숨김 */
+            text-align: center; margin-top: 5px !important; margin-bottom: 20px !important;
+            height: 40px; position: relative; overflow: hidden;
         }}
-        /* 각 해시태그 아이템 스타일 */
         .hashtag-item {{
-            font-size: 1.8em; /* 폰트 크기 */
-            font-weight: bold;
-            color: #4B0082; /* 보라색 */
-            
-            /* 애니메이션을 위한 위치/투명도 설정 */
-            position: absolute;
-            width: 100%;
-            left: 0;
-            opacity: 0; /* 기본적으로 숨김 */
-            transition: opacity 0.5s ease-in-out; /* 0.5초간 부드럽게 사라지고 나타남 */
+            font-size: 1.8em; font-weight: bold; color: #4B0082; 
+            position: absolute; width: 100%; left: 0;
+            opacity: 0; transition: opacity 0.5s ease-in-out; 
         }}
-        /* 'active' 클래스가 붙은 아이템만 보이게 함 */
-        .hashtag-item.active {{
-            opacity: 1; /* 활성화되면 보이게 */
-        }}
+        .hashtag-item.active {{ opacity: 1; }}
     </style>
 
     <div class="hashtag-container" id="hashtag-slider">
         </div>
 
     <script>
-        // setTimeout으로 스크립트 실행을 0.3초 지연
-        setTimeout(function() {{
-
-            // Streamlit이 재실행될 때마다 이 스크립트가 중복 실행되는 것을 방지
+        // [수정] "폴링" 방식으로 스크립트를 수정합니다.
+        
+        // 1. 슬라이더를 시작하는 메인 함수를 정의
+        function startHashtagSlider() {{
+        
+            // 2. 실행 플래그가 이미 true이면 (중복 실행 방지) 즉시 종료
             if (window.hashtagSliderInitialized) return;
-            window.hashtagSliderInitialized = true;
-            
-            const tags = {json.dumps(hashtags)};
+
+            // 3. HTML 요소를 찾습니다.
             const container = document.getElementById('hashtag-slider');
 
+            // 4. [핵심] 만약 요소를 아직 못 찾았다면...
             if (!container) {{
-                console.error("Hashtag container not found!");
-                return;
+                // console.warn("Slider container not found, retrying in 300ms...");
+                // 300ms 뒤에 이 함수(startHashtagSlider)를 다시 실행하고 지금은 종료.
+                setTimeout(startHashtagSlider, 300);
+                return; 
             }}
             
+            // 5. [성공] 여기까지 왔다면, 요소를 찾은 것입니다!
+            // console.log("Slider container found, initializing!");
+            window.hashtagSliderInitialized = true; // 실행 플래그를 올려서 중복 실행 방지
+            
+            const tags = {json.dumps(hashtags)};
             let currentIndex = 0;
 
-            // 1. HTML에 해시태그 아이템들 추가
+            // 6. HTML에 해시태그 아이템들 추가
             tags.forEach((tag, index) => {{
                 const span = document.createElement('span');
                 span.className = 'hashtag-item';
@@ -697,7 +691,7 @@ def show_homepage(display_list, display_to_original_map):
             const items = container.querySelectorAll('.hashtag-item');
             const totalItems = items.length;
 
-            // 2. 2.5초(2500ms)마다 태그 변경
+            // 7. 2.5초(2500ms)마다 태그 변경
             setInterval(() => {{
                 if(items[currentIndex]) {{
                     items[currentIndex].classList.remove('active');
@@ -706,9 +700,12 @@ def show_homepage(display_list, display_to_original_map):
                 if(items[currentIndex]) {{
                     items[currentIndex].classList.add('active');
                 }}
-            }}, 2500); // 2.5초마다 변경
+            }}, 2500); 
+        }}
 
-        }}, 300); // [수정] 100ms -> 300ms (0.3초) 딜레이
+        // 8. 함수를 최초 1회 실행 (폴링 시작)
+        startHashtagSlider();
+
     </script>
     """
     
