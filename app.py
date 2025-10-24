@@ -6,7 +6,7 @@ import warnings
 import re
 import json
 import time
-
+import io
 # 경고 메시지 무시
 warnings.filterwarnings('ignore')
 
@@ -376,55 +376,87 @@ def show_report(store_data, data):
             st.markdown(f'<div class="metric-box box-color-6"><div class="metric-label">신규 고객 비율</div><div class="metric-value">{value}</div><div class="metric-trend">{trend}</div></div>', unsafe_allow_html=True)
 
     with tab2:
-        st.header("📈 상세 시계열 추이 분석 (최근 3개월)")
-        months = ['3개월 전', '2개월 전', '1개월 전']
-        x = range(len(months))
-        st.subheader("고객 및 상권 동향")
-        chart_col1, chart_col2, chart_col3 = st.columns(3)
-        with chart_col1:
-            data_list = [store_data.get(f'유동고객비율_{m}m') for m in [3,2,1]] + [store_data.get(f'직장고객비율_{m}m') for m in [3,2,1]] + [store_data.get(f'거주고객비율_{m}m') for m in [3,2,1]]
-            if pd.Series(data_list).notna().any():
-                fig, ax = plt.subplots(figsize=(6, 3.5))
-                plot_line_chart(ax, months, [data_list[0:3], data_list[3:6], data_list[6:9]], ['유동고객', '직장고객', '거주고객'], "고객 유형 비율", ['steelblue', 'gray', 'darkgreen'], ['o', 's', '^'])
-                fig.tight_layout()
-                st.pyplot(fig, use_container_width=False)
-            else: st.info("고객 유형 비율 데이터가 없습니다.")
-        with chart_col2:
-            data_list = [store_data.get(f'신규고객비율_{m}m') for m in [3,2,1]] + [store_data.get(f'재방문율_{m}m') for m in [3,2,1]]
-            if pd.Series(data_list).notna().any():
-                fig, ax = plt.subplots(figsize=(6, 3.5))
-                plot_line_chart(ax, months, [data_list[0:3], data_list[3:6]], ['신규고객', '재방문율'], "신규/재방문 고객", ['skyblue', 'salmon'], ['o', 's'])
-                fig.tight_layout()
-                st.pyplot(fig, use_container_width=False)
-            else: st.info("신규/재방문 고객 데이터가 없습니다.")
-        with chart_col3:
-            data_list = [store_data.get(f'상권내폐업비율_{m}m') for m in [3,2,1]] + [store_data.get(f'업종내폐업비율_{m}m') for m in [3,2,1]]
-            if pd.Series(data_list).notna().any():
-                fig, ax = plt.subplots(figsize=(6, 3.5))
-                plot_line_chart(ax, months, [data_list[0:3], data_list[3:6]], ['상권내폐업', '업종내폐업'], "폐업 비율", ['gray', 'black'], ['o', 's'])
-                fig.tight_layout()
-                st.pyplot(fig, use_container_width=False)
-            else: st.info("폐업 비율 데이터가 없습니다.")
-        st.divider()
-        st.subheader("매출 성과")
-        chart_col4, chart_col5 = st.columns(2)
-        with chart_col4:
-            data_list = [store_data.get(f'상권내매출순위비율_{m}m') for m in [3,2,1]] + [store_data.get(f'업종내매출순위비율_{m}m') for m in [3,2,1]]
-            if pd.Series(data_list).notna().any():
-                fig, ax = plt.subplots(figsize=(6, 3.5))
-                plot_bar_chart(ax, x, months, [data_list[0:3], data_list[3:6]], ['상권내', '업종내'], "매출 순위 비율 (상위 N%)", ['lightgray', 'steelblue'])
-                fig.tight_layout()
-                st.pyplot(fig, use_container_width=False)
-            else: st.info("매출 순위 비율 데이터가 없습니다.")
-        with chart_col5:
-            data_list = [store_data.get(f'매출건수구간_{m}m') for m in [3,2,1]] + [store_data.get(f'매출금액구간_{m}m') for m in [3,2,1]]
-            if pd.Series(data_list).notna().any():
-                fig, ax = plt.subplots(figsize=(6, 3.5)) # [수정] 차트 크기 통일
-                plot_bar_chart(ax, x, months, [data_list[0:3], data_list[3:6]], ['건수', '금액'], "매출 건수/금액 (구간)", ['gray', 'darkgreen'])
-                fig.tight_layout()
-                st.pyplot(fig, use_container_width=False)
-            else: st.info("매출 건수/금액 데이터가 없습니다.")
-
+            st.header("📈 상세 시계열 추이 분석 (최근 3개월)")
+            months = ['3개월 전', '2개월 전', '1개월 전']
+            x = range(len(months))
+    
+            # --- [수정] 모든 차트의 크기/비율/너비를 여기서 통일합니다 ---
+            CHART_FIGSIZE = (6, 3.5) # PNG 해상도/비율 (가로 6, 세로 3.5)
+            CHART_WIDTH = 450        # 브라우저에 표시될 너비 (450px)
+            # ---------------------------------------------------
+    
+            st.subheader("고객 및 상권 동향")
+            chart_col1, chart_col2, chart_col3 = st.columns(3)
+            
+            with chart_col1:
+                data_list = [store_data.get(f'유동고객비율_{m}m') for m in [3,2,1]] + [store_data.get(f'직장고객비율_{m}m') for m in [3,2,1]] + [store_data.get(f'거주고객비율_{m}m') for m in [3,2,1]]
+                if pd.Series(data_list).notna().any():
+                    fig, ax = plt.subplots(figsize=CHART_FIGSIZE) # 👈 1. 크기 적용
+                    plot_line_chart(ax, months, [data_list[0:3], data_list[3:6], data_list[6:9]], ['유동고객', '직장고객', '거주고객'], "고객 유형 비율", ['steelblue', 'gray', 'darkgreen'], ['o', 's', '^'])
+                    fig.tight_layout()
+                    
+                    # [수정] st.pyplot 대신 st.image 사용
+                    buf = io.BytesIO()
+                    fig.savefig(buf, format='png')
+                    st.image(buf, width=CHART_WIDTH) # 👈 2. 너비 고정
+                    plt.close(fig) # 👈 3. 메모리 관리
+                else: st.info("고객 유형 비율 데이터가 없습니다.")
+    
+            with chart_col2:
+                data_list = [store_data.get(f'신규고객비율_{m}m') for m in [3,2,1]] + [store_data.get(f'재방문율_{m}m') for m in [3,2,1]]
+                if pd.Series(data_list).notna().any():
+                    fig, ax = plt.subplots(figsize=CHART_FIGSIZE) # 👈
+                    plot_line_chart(ax, months, [data_list[0:3], data_list[3:6]], ['신규고객', '재방문율'], "신규/재방문 고객", ['skyblue', 'salmon'], ['o', 's'])
+                    fig.tight_layout()
+                    
+                    buf = io.BytesIO()
+                    fig.savefig(buf, format='png')
+                    st.image(buf, width=CHART_WIDTH) # 👈
+                    plt.close(fig) # 👈
+                else: st.info("신규/재방문 고객 데이터가 없습니다.")
+    
+            with chart_col3:
+                data_list = [store_data.get(f'상권내폐업비율_{m}m') for m in [3,2,1]] + [store_data.get(f'업종내폐업비율_{m}m') for m in [3,2,1]]
+                if pd.Series(data_list).notna().any():
+                    fig, ax = plt.subplots(figsize=CHART_FIGSIZE) # 👈
+                    plot_line_chart(ax, months, [data_list[0:3], data_list[3:6]], ['상권내폐업', '업종내폐업'], "폐업 비율", ['gray', 'black'], ['o', 's'])
+                    fig.tight_layout()
+                    
+                    buf = io.BytesIO()
+                    fig.savefig(buf, format='png')
+                    st.image(buf, width=CHART_WIDTH) # 👈
+                    plt.close(fig) # 👈
+                else: st.info("폐업 비율 데이터가 없습니다.")
+                
+            st.divider()
+            st.subheader("매출 성과")
+            chart_col4, chart_col5 = st.columns(2)
+            
+            with chart_col4:
+                data_list = [store_data.get(f'상권내매출순위비율_{m}m') for m in [3,2,1]] + [store_data.get(f'업종내매출순위비율_{m}m') for m in [3,2,1]]
+                if pd.Series(data_list).notna().any():
+                    fig, ax = plt.subplots(figsize=CHART_FIGSIZE) # 👈
+                    plot_bar_chart(ax, x, months, [data_list[0:3], data_list[3:6]], ['상권내', '업종내'], "매출 순위 비율 (상위 N%)", ['lightgray', 'steelblue'])
+                    fig.tight_layout()
+                    
+                    buf = io.BytesIO()
+                    fig.savefig(buf, format='png')
+                    st.image(buf, width=CHART_WIDTH) # 👈
+                    plt.close(fig) # 👈
+                else: st.info("매출 순위 비율 데이터가 없습니다.")
+                
+            with chart_col5:
+                data_list = [store_data.get(f'매출건수구간_{m}m') for m in [3,2,1]] + [store_data.get(f'매출금액구간_{m}m') for m in [3,2,1]]
+                if pd.Series(data_list).notna().any():
+                    fig, ax = plt.subplots(figsize=CHART_FIGSIZE) # 👈
+                    plot_bar_chart(ax, x, months, [data_list[0:3], data_list[3:6]], ['건수', '금액'], "매출 건수/금액 (구간)", ['gray', 'darkgreen'])
+                    fig.tight_layout()
+                    
+                    buf = io.BytesIO()
+                    fig.savefig(buf, format='png')
+                    st.image(buf, width=CHART_WIDTH) # 👈
+                    plt.close(fig) # 👈
+                else: st.info("매출 건수/금액 데이터가 없습니다.")
     with tab3:
         st.header("🤖 AI 비밀상담사의 맞춤 전략 리포트")
         st.markdown("위의 AI 정밀 진단과 상세 데이터를 바탕으로 AI가 사장님만을 위한 맞춤 전략을 제안합니다.")
