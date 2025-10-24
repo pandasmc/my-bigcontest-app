@@ -464,7 +464,7 @@ def show_report(store_data, data):
                 fig.savefig(buf, format='png')
                 buf.seek(0)
                 img_data = base64.b64encode(buf.read()).decode()
-                # --- [수정] 가운데 정렬 style 속성 제거 (왼쪽 정렬) ---
+                # --- [유지] 왼쪽 정렬 ---
                 st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("고객 유형 비율 데이터가 없습니다.")
@@ -479,7 +479,7 @@ def show_report(store_data, data):
                 fig.savefig(buf, format='png')
                 buf.seek(0)
                 img_data = base64.b64encode(buf.read()).decode()
-                # --- [수정] 가운데 정렬 style 속성 제거 (왼쪽 정렬) ---
+                # --- [유지] 왼쪽 정렬 ---
                 st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("신규/재방문 고객 데이터가 없습니다.")
@@ -494,15 +494,15 @@ def show_report(store_data, data):
                 fig.savefig(buf, format='png')
                 buf.seek(0)
                 img_data = base64.b64encode(buf.read()).decode()
-                # --- [수정] 가운데 정렬 style 속성 제거 (왼쪽 정렬) ---
+                # --- [유지] 왼쪽 정렬 ---
                 st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("폐업 비율 데이터가 없습니다.")
             
         st.divider()
         st.subheader("매출 성과")
-        # --- [수정] 4칸 레이아웃 -> 3칸 [2, 2, 1] 비율로 변경 (왼쪽 정렬 효과) ---
-        chart_col4, chart_col5, spacer = st.columns([2, 2, 1], gap="small")
+        # --- [수정] 윗줄과 동일하게 st.columns(3)으로 변경 ---
+        chart_col4, chart_col5, _ = st.columns(3, gap="small") # 3번째 컬럼은 _ 로 받고 사용 안 함
         
         with chart_col4:
             data_list = [store_data.get(f'상권내매출순위비율_{m}m') for m in [3,2,1]] + [store_data.get(f'업종내매출순위비율_{m}m') for m in [3,2,1]]
@@ -514,7 +514,7 @@ def show_report(store_data, data):
                 fig.savefig(buf, format='png')
                 buf.seek(0)
                 img_data = base64.b64encode(buf.read()).decode()
-                # --- [수정] 가운데 정렬 style 속성 제거 (왼쪽 정렬) ---
+                # --- [유지] 왼쪽 정렬 ---
                 st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("매출 순위 비율 데이터가 없습니다.")
@@ -529,7 +529,7 @@ def show_report(store_data, data):
                 fig.savefig(buf, format='png')
                 buf.seek(0)
                 img_data = base64.b64encode(buf.read()).decode()
-                # --- [수정] 가운데 정렬 style 속성 제거 (왼쪽 정렬) ---
+                # --- [유지] 왼쪽 정렬 ---
                 st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("매출 건수/금액 데이터가 없습니다.")
