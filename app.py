@@ -616,8 +616,91 @@ def show_report(store_data, data):
 def show_homepage(display_list, display_to_original_map):
     """앱의 메인 화면(검색 페이지)을 그립니다."""
     st.markdown("<h1 style='text-align: center; color: #4B0082;'>💡 내 가게를 살리는 AI 비밀상담사</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center;'>다른 사장님들은 무엇을 검색했을까요?</h3>", unsafe_allow_html=True)
-    st.markdown("<h4 style='text-align: center; color: purple;'># 우리 가게 경영 진단</h4>", unsafe_allow_html=True)
+    # --- [추가] 해시태그 슬라이드 쇼 ---
+    # 1. 여기에 표시할 해시태그를 원하는 대로 수정하세요.
+    hashtags = [
+        "#성동구핫플",
+        "#서울숲데이트",
+        "#뚝섬맛집",
+        "#성수동카페거리",
+        "#요즘뜨는전시"
+    ]
+    
+    # 2. 아래 코드가 HTML/CSS/JS를 앱에 삽입합니다.
+    html_content = f"""
+    <style>
+        /* 슬라이드 쇼 컨테이너 스타일 */
+        .hashtag-container {{
+            text-align: center;
+            margin: 20px 0;
+            height: 40px; /* 글자가 바뀌어도 레이아웃이 점프하지 않도록 고정 높이 */
+            position: relative; /* 내부 아이템의 위치 기준 */
+            overflow: hidden; /* 영역 밖으로 나가는 것 숨김 */
+        }}
+        /* 각 해시태그 아이템 스타일 */
+        .hashtag-item {{
+            font-size: 1.8em; /* 폰트 크기 */
+            font-weight: bold;
+            color: #4B0082; /* 보라색 */
+            
+            /* 애니메이션을 위한 위치/투명도 설정 */
+            position: absolute;
+            width: 100%;
+            left: 0;
+            opacity: 0; /* 기본적으로 숨김 */
+            transition: opacity 0.5s ease-in-out; /* 0.5초간 부드럽게 사라지고 나타남 */
+        }}
+        /* 'active' 클래스가 붙은 아이템만 보이게 함 */
+        .hashtag-item.active {{
+            opacity: 1; /* 활성화되면 보이게 */
+        }}
+    </style>
+
+    <div class="hashtag-container" id="hashtag-slider">
+        </div>
+
+    <script>
+        // Streamlit이 재실행될 때마다 이 스크립트가 중복 실행되는 것을 방지
+        if (!window.hashtagSliderInitialized) {{
+            window.hashtagSliderInitialized = true;
+            
+            // 파이썬 리스트를 JavaScript 배열로 변환
+            const tags = {json.dumps(hashtags)};
+            const container = document.getElementById('hashtag-slider');
+            let currentIndex = 0;
+
+            // 1. HTML에 해시태그 아이템들 추가
+            tags.forEach((tag, index) => {{
+                const span = document.createElement('span');
+                span.className = 'hashtag-item';
+                span.textContent = tag;
+                if (index === 0) {{
+                    span.classList.add('active'); // 첫 번째 아이템 활성화
+                }}
+                container.appendChild(span);
+            }});
+
+            const items = container.querySelectorAll('.hashtag-item');
+            const totalItems = items.length;
+
+            // 2. 2.5초(2500ms)마다 태그 변경
+            setInterval(() => {{
+                // 현재 아이템 숨기기
+                items[currentIndex].classList.remove('active');
+                
+                // 다음 아이템 인덱스 계산 (마지막이면 처음으로)
+                currentIndex = (currentIndex + 1) % totalItems;
+                
+                // 다음 아이템 보여주기
+                items[currentIndex].classList.add('active');
+                
+            }}, 2500); // 2.5초마다 변경 (이 숫자를 3000으로 바꾸면 3초)
+        }}
+    </script>
+    """
+    
+    st.markdown(html_content, unsafe_allow_html=True)
+    
     st.markdown("---")
 
     selection = st.selectbox(
