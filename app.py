@@ -387,7 +387,7 @@ def show_report(store_data, data):
                 fig, ax = plt.subplots(figsize=(5, 3))
                 plot_line_chart(ax, months, [data_list[0:3], data_list[3:6], data_list[6:9]], ['유동고객', '직장고객', '거주고객'], "고객 유형 비율", ['steelblue', 'gray', 'darkgreen'], ['o', 's', '^'])
                 fig.tight_layout()
-                st.pyplot(fig)
+                st.pyplot(fig, use_container_width=False)
             else: st.info("고객 유형 비율 데이터가 없습니다.")
         with chart_col2:
             data_list = [store_data.get(f'신규고객비율_{m}m') for m in [3,2,1]] + [store_data.get(f'재방문율_{m}m') for m in [3,2,1]]
@@ -395,7 +395,7 @@ def show_report(store_data, data):
                 fig, ax = plt.subplots(figsize=(5, 3))
                 plot_line_chart(ax, months, [data_list[0:3], data_list[3:6]], ['신규고객', '재방문율'], "신규/재방문 고객", ['skyblue', 'salmon'], ['o', 's'])
                 fig.tight_layout()
-                st.pyplot(fig)
+                st.pyplot(fig, use_container_width=False)
             else: st.info("신규/재방문 고객 데이터가 없습니다.")
         with chart_col3:
             data_list = [store_data.get(f'상권내폐업비율_{m}m') for m in [3,2,1]] + [store_data.get(f'업종내폐업비율_{m}m') for m in [3,2,1]]
@@ -403,7 +403,7 @@ def show_report(store_data, data):
                 fig, ax = plt.subplots(figsize=(5, 3))
                 plot_line_chart(ax, months, [data_list[0:3], data_list[3:6]], ['상권내폐업', '업종내폐업'], "폐업 비율", ['gray', 'black'], ['o', 's'])
                 fig.tight_layout()
-                st.pyplot(fig)
+                st.pyplot(fig, use_container_width=False)
             else: st.info("폐업 비율 데이터가 없습니다.")
         st.divider()
         st.subheader("매출 성과")
@@ -414,7 +414,7 @@ def show_report(store_data, data):
                 fig, ax = plt.subplots(figsize=(5, 3)) # [수정] 차트 크기 통일
                 plot_bar_chart(ax, x, months, [data_list[0:3], data_list[3:6]], ['상권내', '업종내'], "매출 순위 비율 (상위 N%)", ['lightgray', 'steelblue'])
                 fig.tight_layout()
-                st.pyplot(fig)
+                st.pyplot(fig, use_container_width=False)
             else: st.info("매출 순위 비율 데이터가 없습니다.")
         with chart_col5:
             data_list = [store_data.get(f'매출건수구간_{m}m') for m in [3,2,1]] + [store_data.get(f'매출금액구간_{m}m') for m in [3,2,1]]
@@ -422,7 +422,7 @@ def show_report(store_data, data):
                 fig, ax = plt.subplots(figsize=(5, 3)) # [수정] 차트 크기 통일
                 plot_bar_chart(ax, x, months, [data_list[0:3], data_list[3:6]], ['건수', '금액'], "매출 건수/금액 (구간)", ['gray', 'darkgreen'])
                 fig.tight_layout()
-                st.pyplot(fig)
+                st.pyplot(fig, use_container_width=False)
             else: st.info("매출 건수/금액 데이터가 없습니다.")
 
     with tab3:
