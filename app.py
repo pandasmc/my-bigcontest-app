@@ -446,11 +446,12 @@ def show_report(store_data, data):
         x = range(len(months))
 
         # --- 차트 크기/너비 설정 ---
-        CHART_FIGSIZE = (8, 4) 
-        CHART_WIDTH = 800  
+        CHART_FIGSIZE = (6, 3.5) 
+        CHART_WIDTH = 550        
         # ---------------------------
 
         st.subheader("고객 및 상권 동향")
+        # --- [유지] 3칸, 작은 간격 ---
         chart_col1, chart_col2, chart_col3 = st.columns(3, gap="small") 
         
         with chart_col1:
@@ -463,8 +464,8 @@ def show_report(store_data, data):
                 fig.savefig(buf, format='png')
                 buf.seek(0)
                 img_data = base64.b64encode(buf.read()).decode()
-                # --- [수정] class='zoom-chart' 추가 ---
-                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;' class='zoom-chart'>", unsafe_allow_html=True)
+                # --- [수정] 가운데 정렬 style 속성 제거 (왼쪽 정렬) ---
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("고객 유형 비율 데이터가 없습니다.")
 
@@ -478,8 +479,8 @@ def show_report(store_data, data):
                 fig.savefig(buf, format='png')
                 buf.seek(0)
                 img_data = base64.b64encode(buf.read()).decode()
-                # --- [수정] class='zoom-chart' 추가 ---
-                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;' class='zoom-chart'>", unsafe_allow_html=True)
+                # --- [수정] 가운데 정렬 style 속성 제거 (왼쪽 정렬) ---
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("신규/재방문 고객 데이터가 없습니다.")
 
@@ -493,14 +494,15 @@ def show_report(store_data, data):
                 fig.savefig(buf, format='png')
                 buf.seek(0)
                 img_data = base64.b64encode(buf.read()).decode()
-                # --- [수정] class='zoom-chart' 추가 ---
-                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;' class='zoom-chart'>", unsafe_allow_html=True)
+                # --- [수정] 가운데 정렬 style 속성 제거 (왼쪽 정렬) ---
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("폐업 비율 데이터가 없습니다.")
             
         st.divider()
         st.subheader("매출 성과")
-        spacer1, chart_col4, chart_col5, spacer2 = st.columns([1, 2, 2, 1], gap="small")
+        # --- [수정] 4칸 레이아웃 -> 3칸 [2, 2, 1] 비율로 변경 (왼쪽 정렬 효과) ---
+        chart_col4, chart_col5, spacer = st.columns([2, 2, 1], gap="small")
         
         with chart_col4:
             data_list = [store_data.get(f'상권내매출순위비율_{m}m') for m in [3,2,1]] + [store_data.get(f'업종내매출순위비율_{m}m') for m in [3,2,1]]
@@ -512,8 +514,8 @@ def show_report(store_data, data):
                 fig.savefig(buf, format='png')
                 buf.seek(0)
                 img_data = base64.b64encode(buf.read()).decode()
-                # --- [수정] class='zoom-chart' 추가 ---
-                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;' class='zoom-chart'>", unsafe_allow_html=True)
+                # --- [수정] 가운데 정렬 style 속성 제거 (왼쪽 정렬) ---
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("매출 순위 비율 데이터가 없습니다.")
             
@@ -527,11 +529,10 @@ def show_report(store_data, data):
                 fig.savefig(buf, format='png')
                 buf.seek(0)
                 img_data = base64.b64encode(buf.read()).decode()
-                # --- [수정] class='zoom-chart' 추가 ---
-                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;' class='zoom-chart'>", unsafe_allow_html=True)
+                # --- [수정] 가운데 정렬 style 속성 제거 (왼쪽 정렬) ---
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("매출 건수/금액 데이터가 없습니다.")
-
     
     with tab3:
         st.header("🤖 AI 비밀상담사의 맞춤 전략 리포트")
@@ -642,10 +643,12 @@ def show_homepage(display_list, display_to_original_map):
         "#요즘뜨는전시"
     ]
     
-    # 3. [수정] st.markdown 대신 components.html을 사용합니다.
+    # 3. [!!!핵심!!!] 현재 Streamlit 테마('light' 또는 'dark')를 가져옵니다.
+    current_theme = st.get_option("theme.base")
+
+    # 4. [수정] st.markdown 대신 components.html을 사용합니다.
     html_content = f"""
     <style>
-        /* component.html은 자체 body가 있으므로 margin/padding 0으로 초기화 */
         html, body {{ 
             margin: 0; 
             padding: 0; 
@@ -659,12 +662,13 @@ def show_homepage(display_list, display_to_original_map):
         .hashtag-item {{
             font-size: 1.8em; 
             font-weight: bold; 
-            color: var(--primary-color);
+            /* [수정] 기본색(라이트모드)을 고정 보라색으로 지정 */
+            color: #4B0082; 
             
             position: absolute; 
             width: 100%; 
             left: 0;
-            top: 0; /* [추가] component.html에서 위치 고정 */
+            top: 0; 
             
             opacity: 0; 
             transition: opacity 0.5s ease-in-out; 
@@ -672,34 +676,33 @@ def show_homepage(display_list, display_to_original_map):
         .hashtag-item.active {{ 
             opacity: 1; 
         }}
+        
+        /* [!!!핵심!!!] body 태그의 클래스가 'dark'일 때만 색상을 변경 */
+        body.dark .hashtag-item {{
+            /* 다크모드일 때는 연한 보라색(라벤더)으로 표시 */
+            color: #E6E6FA;
+        }}
     </style>
 
-    <div class="hashtag-container" id="hashtag-slider">
-        </div>
+    <body class="{current_theme}">
+        <div class="hashtag-container" id="hashtag-slider">
+            </div>
+    </body>
 
     <script>
-        // "폴링" 방식으로 스크립트를 실행 (가장 안정적)
+        // (스크립트 내용은 이전과 동일합니다)
         function startHashtagSlider() {{
-        
-            // 1. 중복 실행 방지
             if (window.hashtagSliderInitialized) return;
-
-            // 2. HTML 요소를 찾습니다.
             const container = document.getElementById('hashtag-slider');
-
-            // 3. [핵심] 요소를 못 찾았으면, 0.3초 뒤에 다시 시도
             if (!container) {{
                 setTimeout(startHashtagSlider, 300);
                 return; 
             }}
             
-            // 4. [성공] 요소를 찾았으니 플래그를 올리고 실행
             window.hashtagSliderInitialized = true; 
-            
             const tags = {json.dumps(hashtags)};
             let currentIndex = 0;
 
-            // 5. HTML에 해시태그 아이템들 추가
             tags.forEach((tag, index) => {{
                 const span = document.createElement('span');
                 span.className = 'hashtag-item';
@@ -713,7 +716,6 @@ def show_homepage(display_list, display_to_original_map):
             const items = container.querySelectorAll('.hashtag-item');
             const totalItems = items.length;
 
-            // 6. 2.5초마다 태그 변경
             setInterval(() => {{
                 if(items[currentIndex]) {{
                     items[currentIndex].classList.remove('active');
@@ -724,18 +726,14 @@ def show_homepage(display_list, display_to_original_map):
                 }}
             }}, 2500); 
         }}
-
-        // 7. 함수를 최초 1회 실행
         startHashtagSlider();
-
     </script>
     """
     
-    # 4. [수정] st.markdown -> components.html로 변경
-    # height=60으로 공간을 확실하게 확보해줍니다.
+    # 5. components.html로 실행
     components.html(html_content, height=60)
     
-    st.markdown("---")
+    st.markdown("---") # 구분선
 
     selection = st.selectbox(
         "🔍 분석할 가게 이름을 검색하거나 목록에서 선택하세요.",
