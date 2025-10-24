@@ -619,7 +619,7 @@ def show_homepage(display_list, display_to_original_map):
     
     # --- [추가] 해시태그 슬라이드 쇼 ---
     
-    # [수정] 1. 소제목을 여기에 추가합니다.
+    # 1. 소제목
     st.markdown("<h3 style='text-align: center; color: #555;'>▼ 요즘 뜨는 키워드 ▼</h3>", unsafe_allow_html=True)
 
     # 2. 여기에 표시할 해시태그를 원하는 대로 수정하세요.
@@ -637,7 +637,7 @@ def show_homepage(display_list, display_to_original_map):
         /* 슬라이드 쇼 컨테이너 스타일 */
         .hashtag-container {{
             text-align: center;
-            margin-top: 5px !important; /* [수정] 소제목과 간격을 좁힘 */
+            margin-top: 5px !important; /* 소제목과 간격을 좁힘 */
             margin-bottom: 20px !important;
             height: 40px; /* 글자가 바뀌어도 레이아웃이 점프하지 않도록 고정 높이 */
             position: relative; /* 내부 아이템의 위치 기준 */
@@ -666,9 +666,10 @@ def show_homepage(display_list, display_to_original_map):
         </div>
 
     <script>
-        // [수정] setTimeout으로 스크립트 실행을 0.1초 지연시킵니다.
+        // setTimeout으로 스크립트 실행을 0.3초 지연
         setTimeout(function() {{
 
+            // Streamlit이 재실행될 때마다 이 스크립트가 중복 실행되는 것을 방지
             if (window.hashtagSliderInitialized) return;
             window.hashtagSliderInitialized = true;
             
@@ -707,7 +708,7 @@ def show_homepage(display_list, display_to_original_map):
                 }}
             }}, 2500); // 2.5초마다 변경
 
-        }}, 100); // 100ms = 0.1초 딜레이
+        }}, 300); // [수정] 100ms -> 300ms (0.3초) 딜레이
     </script>
     """
     
