@@ -382,11 +382,11 @@ def show_report(store_data, data):
     
             # --- [수정] 모든 차트의 크기/비율/너비를 여기서 통일합니다 ---
             CHART_FIGSIZE = (6, 3.5) # PNG 해상도/비율 (가로 6, 세로 3.5)
-            CHART_WIDTH = 550        # 브라우저에 표시될 너비
+            CHART_WIDTH = 700        # 브라우저에 표시될 너비
             # ---------------------------------------------------
     
             st.subheader("고객 및 상권 동향")
-            chart_col1, chart_col2, chart_col3 = st.columns(3)
+            chart_col1, chart_col2, chart_col3 = st.columns(3, gap='small')
             
             with chart_col1:
                 data_list = [store_data.get(f'유동고객비율_{m}m') for m in [3,2,1]] + [store_data.get(f'직장고객비율_{m}m') for m in [3,2,1]] + [store_data.get(f'거주고객비율_{m}m') for m in [3,2,1]]
