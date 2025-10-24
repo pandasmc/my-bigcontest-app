@@ -631,8 +631,8 @@ def show_homepage(display_list, display_to_original_map):
     """앱의 메인 화면(검색 페이지)을 그립니다."""
     st.markdown("<h1 style='text-align: center; color: var(--primary-color);'>💡 내 가게를 살리는 AI 비밀상담사</h1>", unsafe_allow_html=True)
     
-    # 1. 소제목 (위아래 간격을 0으로 만듭니다)
-    st.markdown("<h3 style='text-align: center; color: var(--gray-70); margin-bottom: 0px;'>▼ 요즘 뜨는 키워드 ▼</h3>", unsafe_allow_html=True)
+    # 1. [수정] st.markdown 소제목을 삭제합니다. (HTML 안으로 이동)
+    # st.markdown("<h3 style='text-align: center; color: var(--gray-70); margin-bottom: 0px;'>▼ 요즘 뜨는 키워드 ▼</h3>", unsafe_allow_html=True)
 
     # 2. 여기에 표시할 해시태그를 원하는 대로 수정하세요.
     hashtags = [
@@ -654,17 +654,25 @@ def show_homepage(display_list, display_to_original_map):
             html, body {{ 
                 margin: 0; 
                 padding: 0; 
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; /* Streamlit 폰트 적용 */
             }}
-            /* [핵심] 컨테이너에 margin-top/bottom을 주어
-             소제목/구분선과의 간격을 직접 조절합니다.
-            */
+            
+            /* [추가] 소제목 스타일 */
+            .slider-subtitle {{
+                text-align: center;
+                font-weight: 600;
+                font-size: 1.5em; /* h3와 유사한 크기 */
+                color: #555; /* 라이트 모드 회색 */
+                margin-bottom: 0px;
+                margin-top: 5px;
+            }}
+            
             .hashtag-container {{
                 text-align: center;
-                height: 40px; /* 텍스트 높이 40px */
+                height: 40px; 
                 width: 100%;
                 position: relative; 
                 overflow: hidden;
-                
                 margin-top: 5px; /* 소제목과의 간격 */
                 margin-bottom: 20px; /* 구분선과의 간격 */
             }}
@@ -672,12 +680,10 @@ def show_homepage(display_list, display_to_original_map):
                 font-size: 1.8em; 
                 font-weight: bold; 
                 color: #4B0082; /* 라이트 모드 기본 */
-                
                 position: absolute; 
                 width: 100%; 
                 left: 0;
-                top: 0; /* [수정] top: 0으로 리셋 */
-                
+                top: 0; 
                 opacity: 0; 
                 transition: opacity 0.5s ease-in-out; 
             }}
@@ -685,26 +691,28 @@ def show_homepage(display_list, display_to_original_map):
                 opacity: 1; 
             }}
             
-            /* 다크 모드 CSS */
+            /* --- 다크 모드 CSS --- */
+            body.dark .slider-subtitle {{
+                color: #adbac7; /* 다크: 회색 */
+            }}
             body.dark .hashtag-item {{
                 color: #E6E6FA; /* 다크: 연보라 */
             }}
         </style>
     </head>
     <body class="{current_theme}">
+        
+        <h3 class="slider-subtitle">▼ 요즘 뜨는 키워드 ▼</h3>
+        
         <div class="hashtag-container" id="hashtag-slider">
             </div>
 
         <script>
-            // "폴링" 방식으로 스크립트를 실행
+            // (스크립트 내용은 이전과 동일)
             function startHashtagSlider() {{
                 if (window.hashtagSliderInitialized) return;
                 const container = document.getElementById('hashtag-slider');
-
-                if (!container) {{
-                    setTimeout(startHashtagSlider, 300);
-                    return; 
-                }}
+                if (!container) {{ setTimeout(startHashtagSlider, 300); return; }}
                 
                 window.hashtagSliderInitialized = true; 
                 const tags = {json.dumps(hashtags)};
@@ -714,9 +722,7 @@ def show_homepage(display_list, display_to_original_map):
                     const span = document.createElement('span');
                     span.className = 'hashtag-item';
                     span.textContent = tag;
-                    if (index === 0) {{
-                        span.classList.add('active'); 
-                    }}
+                    if (index === 0) {{ span.classList.add('active'); }}
                     container.appendChild(span);
                 }});
 
@@ -724,13 +730,9 @@ def show_homepage(display_list, display_to_original_map):
                 const totalItems = items.length;
 
                 setInterval(() => {{
-                    if(items[currentIndex]) {{
-                        items[currentIndex].classList.remove('active');
-                    }}
+                    if(items[currentIndex]) {{ items[currentIndex].classList.remove('active'); }}
                     currentIndex = (currentIndex + 1) % totalItems;
-                    if(items[currentIndex]) {{
-                        items[currentIndex].classList.add('active');
-                    }}
+                    if(items[currentIndex]) {{ items[currentIndex].classList.add('active'); }}
                 }}, 2500); 
             }}
             startHashtagSlider();
@@ -739,8 +741,8 @@ def show_homepage(display_list, display_to_original_map):
     </html>
     """
     
-    # 5. [수정] components.html의 height를 None (auto)으로 설정
-    components.html(html_content, height=None)
+    # 5. [수정] height를 100px로 넉넉하게 확보
+    components.html(html_content, height=100)
     
     st.markdown("---") # 구분선
 
