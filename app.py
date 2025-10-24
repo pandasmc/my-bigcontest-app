@@ -90,7 +90,7 @@ def parse_full_description(full_desc):
 def generate_prompt(store_name, industry, open_date, close_date, 
                     closure_risk, closure_factors, 
                     customer_type, competitiveness, customer_relation,
-                    local_area_info,
+                    local_district_name, local_industry_info, # 👈 [수정] local_area_info -> 두 개로 분리
                     trend_analysis_text):
     """AI에게 JSON 형식으로 구조화된 답변을 요청하는 프롬프트를 생성합니다."""
     close_info = "현재 운영 중" if pd.isna(close_date) else f"폐업일: {close_date}"
@@ -105,7 +105,8 @@ def generate_prompt(store_name, industry, open_date, close_date,
 [AI 정밀 진단 요약]
 - 폐업 위험도: {closure_risk}, 주요 원인: {closure_factors}
 - 고객 유형: {customer_type}, 가게 경쟁력: {competitiveness}, 고객 관계: {customer_relation}
-- 현재 상권 현황: {local_area_info}
+- 상권 이름: {local_district_name}
+- 상권 내 주요 업종: {local_industry_info}
 
 [주요 지표 3개월 추세]
 {trend_analysis_text}
@@ -121,18 +122,25 @@ def generate_prompt(store_name, industry, open_date, close_date,
 7. 'action_table': [단계, 실행 방안, 예상 비용]을 포함하는 마크다운 테이블 텍스트를 생성해주세요.
 8. 'expected_effect': 예상 기대효과를 구체적인 수치로 제시해주세요.
 9. 'encouragement': 사장님을 위한 따뜻한 응원의 메시지를 넣어주세요.
-10. 'local_event_recommendation': [현재 상권 현황] 정보를 바탕으로, 해당 지역(예: {local_area_info})에서 진행 중이거나 예정인 관련 행사를 1개 추천해주세요.
-    - [중요] 이 정보는 당신의 학습 데이터 기반이며 실시간 웹 검색이 아닙니다. 확실한 정보(행사명, 내용, 출처 URL)가 있을 때만 추천해주세요.
-    - 유효한 URL이 없다면, "source" 값은 "정보 없음"으로 응답하고 절대 URL을 지어내지 마세요.
+10. 'local_event_recommendation': 
+    - [상권 이름]({local_district_name})의 특징 (예: {local_district_name}는 20대 유동인구가 많음, {local_district_name}는 오피스 상권임 등)을 당신의 **사전 학습된 지식**을 바탕으로 추론해주세요.
+    - 그 특징과 사장님 가게({industry})를 연계할 수 있는 **마케팅 아이디어** 1개를 제안해주세요.
+    - [중요] **절대 실시간 웹 검색을 시도하거나 '오늘' 날짜의 이벤트를 찾으려고 하지 마세요.** 당신의 지식 기반으로 한 "아이디어"를 제안하는 것입니다.
+    - URL은 제안한 아이디어와 관련된 **일반적인 정보성 블로그/기사 URL 1개**를 추천해줄 수 있습니다 (예: '성수동 팝업스토어 마케팅 방법'에 대한 블로그).
+    - 확실한 URL이 없다면 "출처 없음"으로 응답하고, 절대 URL을 지어내지 마세요.
 
 {{
   "store_summary": "...", "risk_signal": "...", "opportunity_signal": "...",
   "action_plan_title": "핵심 액션 플랜: [제목]", "action_plan_detail": "[상세 설명]",
   "fact_based_example": "[성공 사례 요약]",
-  "example_source": "https://www.example-news.com/article/123",
+  "example_source": "출처 없음",
   "action_table": "| 단계 | 실행 방안 | 예상 비용 |\\n|---|---|---|\\n| 1단계 | OOO 실행 | 10만원 |",
   "expected_effect": "신규 고객 15% 증가", "encouragement": "...",
-  "local_event_recommendation": {{ "title": "지역 행사 정보 없음", "details": "현재 학습된 데이터 내에서 추천할 만한 관련 지역 행사를 찾지 못했습니다.", "source": "정보 없음" }}
+  "local_event_recommendation": {{ 
+    "title": "마케팅 아이디어 제안 (예: 성수동 팝업 연계)", 
+    "details": "당신의 지식에 따르면 {local_district_name}은(는) 20대 유동인구가 많은 핫플레이스입니다. 사장님 가게의 주 고객층과 유사하므로, 인근 팝업스토어와 연계한 할인 쿠폰을 제안합니다.", 
+    "source": "https://example-blog.com/popup-marketing-strategy" 
+  }}
 }}
 """
     return prompt.strip()
@@ -547,17 +555,25 @@ def show_report(store_data, data):
     with tab3:
         st.header("🤖 AI 비밀상담사의 맞춤 전략 리포트")
         st.markdown("위의 AI 정밀 진단과 상세 데이터를 바탕으로 AI가 사장님만을 위한 맞춤 전략을 제안합니다.")
+        
         def get_trend_str(col_name):
             val = store_data.get(col_name)
             return str(val) if not pd.isna(val) else "데이터 없음"
         trend_analysis_text = "\n".join([f"- {col.replace('_', ' ')}: {get_trend_str(col)}" for col in store_data.index if '추세' in col])
         
-        local_info_for_prompt = "데이터 없음"
-        if current_district and not pd.isna(current_district):
-            district_df = data[data['상권'] == current_district]
+        # --- [수정] 프롬프트에 '상권 이름'과 '업종 현황'을 분리하여 전달 ---
+        local_industry_info = "데이터 없음"
+        local_district_name = store_data.get('상권') # 👈 상권 이름 (예: '성수동')
+        if pd.isna(local_district_name):
+            local_district_name = "정보 없음"
+            
+        if local_district_name != "정보 없음":
+            # [수정] 여기서 data 변수는 show_report의 인자로 받은 DataFrame입니다.
+            district_df = data[data['상권'] == local_district_name] 
             top_5_industries = district_df['업종'].value_counts().nlargest(5)
             if not top_5_industries.empty:
-                local_info_for_prompt = ", ".join([f"{index} ({value}개)" for index, value in top_5_industries.items()])
+                local_industry_info = ", ".join([f"{index} ({value}개)" for index, value in top_5_industries.items()])
+        # --- [수정] 여기까지 ---
 
         prompt = generate_prompt(
             store_name=store_data.get('가맹점명'), industry=store_data.get('업종'),
@@ -565,7 +581,11 @@ def show_report(store_data, data):
             closure_risk=parsed_data['폐업 위험도'], closure_factors=parsed_data['주요 원인'],
             customer_type=parsed_data['고객유형'], competitiveness=parsed_data['경쟁력'],
             customer_relation=parsed_data['고객관계'],
-            local_area_info=local_info_for_prompt, 
+            
+            # [수정] 두 가지 정보를 분리해서 전달
+            local_district_name=local_district_name, 
+            local_industry_info=local_industry_info, 
+            
             trend_analysis_text=trend_analysis_text
         )
 
