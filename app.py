@@ -356,6 +356,16 @@ def show_report(store_data, data):
             color: #E6E6FA !important; /* 다크: 연보라 글씨 */
         }
     }
+
+    /* ---------------------------------- */
+    /* 8. [추가] st.success/info/error 텍스트 겹침 방지 */
+    /* ---------------------------------- */
+    div[data-testid="stNotification"] {
+        word-break: keep-all;     /* 1. 한글 단어가 중간에 깨지는 것을 방지 */
+        overflow-wrap: break-word;/* 2. 1015%p처럼 긴 문자열이 넘칠 경우 강제 줄바꿈 */
+        line-height: 1.6em;       /* 3. 줄간격을 넉넉하게 확보 */
+    }
+    
     </style>
     """, unsafe_allow_html=True)
 
