@@ -616,8 +616,13 @@ def show_report(store_data, data):
 def show_homepage(display_list, display_to_original_map):
     """앱의 메인 화면(검색 페이지)을 그립니다."""
     st.markdown("<h1 style='text-align: center; color: #4B0082;'>💡 내 가게를 살리는 AI 비밀상담사</h1>", unsafe_allow_html=True)
+    
     # --- [추가] 해시태그 슬라이드 쇼 ---
-    # 1. 여기에 표시할 해시태그를 원하는 대로 수정하세요.
+    
+    # [수정] 1. 소제목을 여기에 추가합니다.
+    st.markdown("<h3 style='text-align: center; color: #555;'>▼ 요즘 뜨는 키워드 ▼</h3>", unsafe_allow_html=True)
+
+    # 2. 여기에 표시할 해시태그를 원하는 대로 수정하세요.
     hashtags = [
         "#성동구핫플",
         "#서울숲데이트",
@@ -626,13 +631,14 @@ def show_homepage(display_list, display_to_original_map):
         "#요즘뜨는전시"
     ]
     
-    # 2. 아래 코드가 HTML/CSS/JS를 앱에 삽입합니다.
+    # 3. 아래 코드가 HTML/CSS/JS를 앱에 삽입합니다.
     html_content = f"""
     <style>
         /* 슬라이드 쇼 컨테이너 스타일 */
         .hashtag-container {{
             text-align: center;
-            margin: 20px 0;
+            margin-top: 5px !important; /* [수정] 소제목과 간격을 좁힘 */
+            margin-bottom: 20px !important;
             height: 40px; /* 글자가 바뀌어도 레이아웃이 점프하지 않도록 고정 높이 */
             position: relative; /* 내부 아이템의 위치 기준 */
             overflow: hidden; /* 영역 밖으로 나가는 것 숨김 */
@@ -660,13 +666,20 @@ def show_homepage(display_list, display_to_original_map):
         </div>
 
     <script>
-        // Streamlit이 재실행될 때마다 이 스크립트가 중복 실행되는 것을 방지
-        if (!window.hashtagSliderInitialized) {{
+        // [수정] setTimeout으로 스크립트 실행을 0.1초 지연시킵니다.
+        setTimeout(function() {{
+
+            if (window.hashtagSliderInitialized) return;
             window.hashtagSliderInitialized = true;
             
-            // 파이썬 리스트를 JavaScript 배열로 변환
             const tags = {json.dumps(hashtags)};
             const container = document.getElementById('hashtag-slider');
+
+            if (!container) {{
+                console.error("Hashtag container not found!");
+                return;
+            }}
+            
             let currentIndex = 0;
 
             // 1. HTML에 해시태그 아이템들 추가
@@ -685,17 +698,16 @@ def show_homepage(display_list, display_to_original_map):
 
             // 2. 2.5초(2500ms)마다 태그 변경
             setInterval(() => {{
-                // 현재 아이템 숨기기
-                items[currentIndex].classList.remove('active');
-                
-                // 다음 아이템 인덱스 계산 (마지막이면 처음으로)
+                if(items[currentIndex]) {{
+                    items[currentIndex].classList.remove('active');
+                }}
                 currentIndex = (currentIndex + 1) % totalItems;
-                
-                // 다음 아이템 보여주기
-                items[currentIndex].classList.add('active');
-                
-            }}, 2500); // 2.5초마다 변경 (이 숫자를 3000으로 바꾸면 3초)
-        }}
+                if(items[currentIndex]) {{
+                    items[currentIndex].classList.add('active');
+                }}
+            }}, 2500); // 2.5초마다 변경
+
+        }}, 100); // 100ms = 0.1초 딜레이
     </script>
     """
     
