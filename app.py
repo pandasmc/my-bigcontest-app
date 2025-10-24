@@ -300,9 +300,7 @@ def show_report(store_data, data):
         border: none !important;
         border-radius: 8px !important;
         transform: none; 
-        
-        /* [추가] 연한 배경에 잘 보이도록 얇은 테두리 추가 */
-        border: 1px solid #D8BFD8 !important; 
+
     }
     
     /* 4-1. (선택된 탭) 폰트 색 */
