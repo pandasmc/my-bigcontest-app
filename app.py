@@ -290,7 +290,7 @@ def show_report(store_data, data):
 
     /* 3. 탭에 마우스를 올렸을 때 (선택 안 된 탭) */
     div[data-testid="stTabs"] button:hover:not([aria-selected="true"]) {
-        transform: scale(1.05); /
+        transform: scale(1.3); /
         background-color: #e9ecef !important; /* [수정] 호버 시 배경색 */
     }
 
@@ -327,6 +327,20 @@ def show_report(store_data, data):
       border-radius: 5px;
     }
     
+    /* ---------------------------------- */
+    /* [추가] 제목/탭/내용 간격 띄우기 */
+    /* ---------------------------------- */
+
+    /* 1. 제목 (타이틀) 아래 간격 */
+    div[data-testid="stTitle"] {
+      margin-bottom: 25px !important; /* 제목과 탭 사이 25px 띄우기 */
+    }
+
+    /* 2. 탭 메뉴 자체의 아래 간격 */
+    /* (탭 메뉴와 탭 내부의 'AI 정밀 진단 요약' 헤더 사이) */
+    div[data-testid="stTabs"] {
+      margin-bottom: 25px !important; /* 탭과 탭 내용 사이 25px 띄우기 */
+    }
     </style>
     """, unsafe_allow_html=True)
 
