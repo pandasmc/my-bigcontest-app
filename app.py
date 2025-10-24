@@ -398,8 +398,8 @@ def show_report(store_data, data):
         x = range(len(months))
 
         # --- 차트 크기/너비 설정 ---
-        CHART_FIGSIZE = (6, 3.5) 
-        CHART_WIDTH = 550        
+        CHART_FIGSIZE = (8, 4) 
+        CHART_WIDTH = 800  
         # ---------------------------
 
         st.subheader("고객 및 상권 동향")
