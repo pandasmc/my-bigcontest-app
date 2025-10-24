@@ -652,10 +652,17 @@ def show_homepage(display_list, display_to_original_map):
         html, body {{ 
             margin: 0; 
             padding: 0; 
+            height: 100%; /* 1. body가 iframe(60px) 높이를 꽉 채우게 함 */
+            
+            /* 2. [추가] flex를 이용해 자식 요소를 세로 중앙 정렬 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }}
         .hashtag-container {{
             text-align: center;
             height: 40px; 
+            width: 100%; /* 3. [추가] 가로 폭을 꽉 채움 */
             position: relative; 
             overflow: hidden;
         }}
