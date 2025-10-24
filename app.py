@@ -8,6 +8,7 @@ import json
 import time
 import io
 import base64
+import streamlit.components.v1 as components
 
 # 경고 메시지 무시
 warnings.filterwarnings('ignore')
@@ -617,8 +618,6 @@ def show_homepage(display_list, display_to_original_map):
     """앱의 메인 화면(검색 페이지)을 그립니다."""
     st.markdown("<h1 style='text-align: center; color: #4B0082;'>💡 내 가게를 살리는 AI 비밀상담사</h1>", unsafe_allow_html=True)
     
-    # --- [추가] 해시태그 슬라이드 쇼 ---
-    
     # 1. 소제목
     st.markdown("<h3 style='text-align: center; color: #555;'>▼ 요즘 뜨는 키워드 ▼</h3>", unsafe_allow_html=True)
 
@@ -631,59 +630,70 @@ def show_homepage(display_list, display_to_original_map):
         "#요즘뜨는전시"
     ]
     
-    # 3. 아래 코드가 HTML/CSS/JS를 앱에 삽입합니다.
+    # 3. [수정] st.markdown 대신 components.html을 사용합니다.
     html_content = f"""
     <style>
-        /* ... (CSS 스타일은 이전과 동일) ... */
+        /* component.html은 자체 body가 있으므로 margin/padding 0으로 초기화 */
+        html, body {{ 
+            margin: 0; 
+            padding: 0; 
+        }}
         .hashtag-container {{
-            text-align: center; margin-top: 5px !important; margin-bottom: 20px !important;
-            height: 40px; position: relative; overflow: hidden;
+            text-align: center;
+            height: 40px; 
+            position: relative; 
+            overflow: hidden;
         }}
         .hashtag-item {{
-            font-size: 1.8em; font-weight: bold; color: #4B0082; 
-            position: absolute; width: 100%; left: 0;
-            opacity: 0; transition: opacity 0.5s ease-in-out; 
+            font-size: 1.8em; 
+            font-weight: bold; 
+            color: #4B0082; 
+            
+            position: absolute; 
+            width: 100%; 
+            left: 0;
+            top: 0; /* [추가] component.html에서 위치 고정 */
+            
+            opacity: 0; 
+            transition: opacity 0.5s ease-in-out; 
         }}
-        .hashtag-item.active {{ opacity: 1; }}
+        .hashtag-item.active {{ 
+            opacity: 1; 
+        }}
     </style>
 
     <div class="hashtag-container" id="hashtag-slider">
         </div>
 
     <script>
-        // [수정] "폴링" 방식으로 스크립트를 수정합니다.
-        
-        // 1. 슬라이더를 시작하는 메인 함수를 정의
+        // "폴링" 방식으로 스크립트를 실행 (가장 안정적)
         function startHashtagSlider() {{
         
-            // 2. 실행 플래그가 이미 true이면 (중복 실행 방지) 즉시 종료
+            // 1. 중복 실행 방지
             if (window.hashtagSliderInitialized) return;
 
-            // 3. HTML 요소를 찾습니다.
+            // 2. HTML 요소를 찾습니다.
             const container = document.getElementById('hashtag-slider');
 
-            // 4. [핵심] 만약 요소를 아직 못 찾았다면...
+            // 3. [핵심] 요소를 못 찾았으면, 0.3초 뒤에 다시 시도
             if (!container) {{
-                // console.warn("Slider container not found, retrying in 300ms...");
-                // 300ms 뒤에 이 함수(startHashtagSlider)를 다시 실행하고 지금은 종료.
                 setTimeout(startHashtagSlider, 300);
                 return; 
             }}
             
-            // 5. [성공] 여기까지 왔다면, 요소를 찾은 것입니다!
-            // console.log("Slider container found, initializing!");
-            window.hashtagSliderInitialized = true; // 실행 플래그를 올려서 중복 실행 방지
+            // 4. [성공] 요소를 찾았으니 플래그를 올리고 실행
+            window.hashtagSliderInitialized = true; 
             
             const tags = {json.dumps(hashtags)};
             let currentIndex = 0;
 
-            // 6. HTML에 해시태그 아이템들 추가
+            // 5. HTML에 해시태그 아이템들 추가
             tags.forEach((tag, index) => {{
                 const span = document.createElement('span');
                 span.className = 'hashtag-item';
                 span.textContent = tag;
                 if (index === 0) {{
-                    span.classList.add('active'); // 첫 번째 아이템 활성화
+                    span.classList.add('active'); 
                 }}
                 container.appendChild(span);
             }});
@@ -691,7 +701,7 @@ def show_homepage(display_list, display_to_original_map):
             const items = container.querySelectorAll('.hashtag-item');
             const totalItems = items.length;
 
-            // 7. 2.5초(2500ms)마다 태그 변경
+            // 6. 2.5초마다 태그 변경
             setInterval(() => {{
                 if(items[currentIndex]) {{
                     items[currentIndex].classList.remove('active');
@@ -703,13 +713,15 @@ def show_homepage(display_list, display_to_original_map):
             }}, 2500); 
         }}
 
-        // 8. 함수를 최초 1회 실행 (폴링 시작)
+        // 7. 함수를 최초 1회 실행
         startHashtagSlider();
 
     </script>
     """
     
-    st.markdown(html_content, unsafe_allow_html=True)
+    # 4. [수정] st.markdown -> components.html로 변경
+    # height=60으로 공간을 확실하게 확보해줍니다.
+    components.html(html_content, height=60)
     
     st.markdown("---")
 
