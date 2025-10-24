@@ -388,7 +388,7 @@ def show_report(store_data, data):
         # ---------------------------
 
         st.subheader("고객 및 상권 동향")
-        # --- [수정] gap="small"로 컬럼 간 간격 좁히기 ---
+        # --- gap="small"로 컬럼 간 간격 좁히기 ---
         chart_col1, chart_col2, chart_col3 = st.columns(3, gap="small") 
         
         with chart_col1:
@@ -401,10 +401,10 @@ def show_report(store_data, data):
                 buf = io.BytesIO()
                 fig.savefig(buf, format='png')
                 
-                # --- [수정] 윗줄도 가운데 정렬 ---
+                # --- [수정] 변수명을 'data'에서 'img_data'로 변경 ---
                 buf.seek(0)
-                data = base64.b64encode(buf.read()).decode()
-                st.markdown(f"<img src='data:image/png;base64,{data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True)
+                img_data = base64.b64encode(buf.read()).decode() # 👈 수정
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True) # 👈 수정
                 plt.close(fig) 
             else: st.info("고객 유형 비율 데이터가 없습니다.")
 
@@ -418,10 +418,10 @@ def show_report(store_data, data):
                 buf = io.BytesIO()
                 fig.savefig(buf, format='png')
 
-                # --- [수정] 윗줄도 가운데 정렬 ---
+                # --- [수정] 변수명을 'data'에서 'img_data'로 변경 ---
                 buf.seek(0)
-                data = base64.b64encode(buf.read()).decode()
-                st.markdown(f"<img src='data:image/png;base64,{data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True)
+                img_data = base64.b64encode(buf.read()).decode() # 👈 수정
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True) # 👈 수정
                 plt.close(fig) 
             else: st.info("신규/재방문 고객 데이터가 없습니다.")
 
@@ -435,16 +435,16 @@ def show_report(store_data, data):
                 buf = io.BytesIO()
                 fig.savefig(buf, format='png')
 
-                # --- [수정] 윗줄도 가운데 정렬 ---
+                # --- [수정] 변수명을 'data'에서 'img_data'로 변경 ---
                 buf.seek(0)
-                data = base64.b64encode(buf.read()).decode()
-                st.markdown(f"<img src='data:image/png;base64,{data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True)
+                img_data = base64.b64encode(buf.read()).decode() # 👈 수정
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True) # 👈 수정
                 plt.close(fig) 
             else: st.info("폐업 비율 데이터가 없습니다.")
             
         st.divider()
         st.subheader("매출 성과")
-        # --- [수정] gap="small"로 컬럼 간 간격 좁히기 ---
+        # --- gap="small"로 컬럼 간 간격 좁히기 ---
         chart_col4, chart_col5 = st.columns(2, gap="small") 
         
         with chart_col4:
@@ -457,10 +457,10 @@ def show_report(store_data, data):
                 buf = io.BytesIO()
                 fig.savefig(buf, format='png')
                 
-                # --- (기존 가운데 정렬 코드 유지) ---
+                # --- [수정] 변수명을 'data'에서 'img_data'로 변경 ---
                 buf.seek(0)
-                data = base64.b64encode(buf.read()).decode()
-                st.markdown(f"<img src='data:image/png;base64,{data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True)
+                img_data = base64.b64encode(buf.read()).decode() # 👈 수정
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True) # 👈 수정
                 plt.close(fig) 
             else: st.info("매출 순위 비율 데이터가 없습니다.")
             
@@ -474,12 +474,14 @@ def show_report(store_data, data):
                 buf = io.BytesIO()
                 fig.savefig(buf, format='png')
 
-                # --- (기존 가운데 정렬 코드 유지) ---
+                # --- [수정] 변수명을 'data'에서 'img_data'로 변경 ---
                 buf.seek(0)
-                data = base64.b64encode(buf.read()).decode()
-                st.markdown(f"<img src='data:image/png;base64,{data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True)
+                img_data = base64.b64encode(buf.read()).decode() # 👈 수정
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True) # 👈 수정
                 plt.close(fig) 
             else: st.info("매출 건수/금액 데이터가 없습니다.")
+
+    
     with tab3:
         st.header("🤖 AI 비밀상담사의 맞춤 전략 리포트")
         st.markdown("위의 AI 정밀 진단과 상세 데이터를 바탕으로 AI가 사장님만을 위한 맞춤 전략을 제안합니다.")
