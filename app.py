@@ -258,32 +258,31 @@ def show_report(store_data, data):
     .bar-chart-label { flex: 2; text-align: left; padding-right: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .bar-chart-bar-container { flex: 5; background-color: #eaf0f4; border-radius: 5px; }
     .bar-chart-bar { background-color: #5c9ce5; height: 20px; border-radius: 5px; }
+
     /* ---------------------------------- */
-    /* [수정] 탭 스타일 꾸미기 (글자 크기 + 디자인) */
+    /* 탭 스타일 꾸미기 (글자 크기 + 디자인) */
     /* ---------------------------------- */
-    
+
     /* 1. 탭 버튼 기본 스타일 (글자 크기, 패딩 등) */
     button[data-baseweb="tab"] {
-      font-size: 3.5em;  /* 탭 글자 크기 */
+      font-size: 3.5em !important; 
       font-weight: bold;
-      padding-top: 12px;     /* 탭 상하 여백 */
+      padding-top: 12px;
       padding-bottom: 12px;
     }
 
     /* 2. 현재 선택된 탭 스타일 */
     button[data-baseweb="tab"][aria-selected="true"] {
-      font-size: 3.5em;
-      background-color: #f0f2f6; /* 선택된 탭 배경색 */
-      border-radius: 8px 8px 0 0; /* 위쪽 모서리 둥글게 */
-      
-      /* 선택된 탭 하단에 굵은 보라색 선 추가 */
+      font-size: 3.5em !important;
+      background-color: #f0f2f6;
+      border-radius: 8px 8px 0 0;
       border-bottom: 3px solid #4B0082; 
-      color: #4B0082; /* 선택된 탭 글자색 */
+      color: #4B0082;
     }
 
     /* 3. 탭에 마우스를 올렸을 때 (선택되지 않은 탭) */
     button[data-baseweb="tab"]:hover:not([aria-selected="true"]) {
-      background-color: #fafafa; /* 마우스 오버 배경색 */
+      background-color: #fafafa;
       color: #555;
     }
     
