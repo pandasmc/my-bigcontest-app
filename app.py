@@ -264,7 +264,7 @@ def show_report(store_data, data):
     
     /* 1. 탭 버튼 기본 스타일 (글자 크기, 패딩 등) */
     button[data-baseweb="tab"] {
-      font-size: 1.15em;  /* 탭 글자 크기 (기존 1.2em에서 약간 조절) */
+      font-size: 3.5em;  /* 탭 글자 크기 */
       font-weight: bold;
       padding-top: 12px;     /* 탭 상하 여백 */
       padding-bottom: 12px;
