@@ -272,6 +272,7 @@ def show_report(store_data, data):
 
     /* 2. 현재 선택된 탭 스타일 */
     button[data-baseweb="tab"][aria-selected="true"] {
+      font-size: 3.5em;
       background-color: #f0f2f6; /* 선택된 탭 배경색 */
       border-radius: 8px 8px 0 0; /* 위쪽 모서리 둥글게 */
       
