@@ -113,11 +113,14 @@ def generate_prompt(store_name, industry, open_date, close_date,
 3. 'risk_signal', 'opportunity_signal': 가장 중요한 위험/기회 신호 1가지씩을 넣어주세요.
 4. 'action_plan_detail': 구체적인 액션 플랜 1가지를 제안해주세요.
 5. 'fact_based_example': 위 'action_plan'과 유사한 전략으로 성공한 (사실 기반의) 타 업종 사례를 1~2줄로 요약해주세요.
-6. 'example_source': 위 성공 사례의 신뢰도를 위해, 가장 관련성이 높은 단 하나의 유효한 출처(뉴스 기사 등) URL을 포함해주세요. URL이 없거나 유효하지 않으면 "출처 없음"으로 응답해주세요.
+6. 'example_source': 위 성공 사례의 신뢰도를 위해, 관련 뉴스 기사 등의 출처 URL을 포함해주세요.
+   - [중요] 만약 확실하고 유효한 URL을 모른다면, 절대 URL을 지어내지 말고 "출처 없음"으로 응답해주세요.
 7. 'action_table': [단계, 실행 방안, 예상 비용]을 포함하는 마크다운 테이블 텍스트를 생성해주세요.
 8. 'expected_effect': 예상 기대효과를 구체적인 수치로 제시해주세요.
 9. 'encouragement': 사장님을 위한 따뜻한 응원의 메시지를 넣어주세요.
-10. 'local_event_recommendation': [현재 상권 현황] 정보를 바탕으로, 오늘 날짜 기준으로 해당 지역에서 진행 중이거나 예정인 팝업 스토어, 행사 등을 웹 검색하여 가장 관련성 높은 1개를 추천하고, 유효한 URL을 제공해주세요. URL이 없으면 "정보 없음"으로 응답해주세요.
+10. 'local_event_recommendation': [현재 상권 현황] 정보를 바탕으로, 해당 지역(예: {local_area_info})에서 진행 중이거나 예정인 관련 행사를 1개 추천해주세요.
+    - [중요] 이 정보는 당신의 학습 데이터 기반이며 실시간 웹 검색이 아닙니다. 확실한 정보(행사명, 내용, 출처 URL)가 있을 때만 추천해주세요.
+    - 유효한 URL이 없다면, "source" 값은 "정보 없음"으로 응답하고 절대 URL을 지어내지 마세요.
 
 {{
   "store_summary": "...", "risk_signal": "...", "opportunity_signal": "...",
@@ -126,7 +129,7 @@ def generate_prompt(store_name, industry, open_date, close_date,
   "example_source": "https://www.example-news.com/article/123",
   "action_table": "| 단계 | 실행 방안 | 예상 비용 |\\n|---|---|---|\\n| 1단계 | OOO 실행 | 10만원 |",
   "expected_effect": "신규 고객 15% 증가", "encouragement": "...",
-  "local_event_recommendation": {{ "title": "성수동 팝업스토어 추천", "details": "현재 성수동에서 'XYZ 브랜드 팝업'이 진행중입니다. 사장님 가게의 주 고객층과 유사하여 방문객 유입을 유도할 수 있습니다.", "source": "https://blog.example.com/seongsu-popup" }}
+  "local_event_recommendation": {{ "title": "지역 행사 정보 없음", "details": "현재 학습된 데이터 내에서 추천할 만한 관련 지역 행사를 찾지 못했습니다.", "source": "정보 없음" }}
 }}
 """
     return prompt.strip()
@@ -255,6 +258,39 @@ def show_report(store_data, data):
     .bar-chart-label { flex: 2; text-align: left; padding-right: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .bar-chart-bar-container { flex: 5; background-color: #eaf0f4; border-radius: 5px; }
     .bar-chart-bar { background-color: #5c9ce5; height: 20px; border-radius: 5px; }
+    /* ---------------------------------- */
+    /* [수정] 탭 스타일 꾸미기 (글자 크기 + 디자인) */
+    /* ---------------------------------- */
+    
+    /* 1. 탭 버튼 기본 스타일 (글자 크기, 패딩 등) */
+    button[data-baseweb="tab"] {
+      font-size: 1.15em;  /* 탭 글자 크기 (기존 1.2em에서 약간 조절) */
+      font-weight: bold;
+      padding-top: 12px;     /* 탭 상하 여백 */
+      padding-bottom: 12px;
+    }
+
+    /* 2. 현재 선택된 탭 스타일 */
+    button[data-baseweb="tab"][aria-selected="true"] {
+      background-color: #f0f2f6; /* 선택된 탭 배경색 */
+      border-radius: 8px 8px 0 0; /* 위쪽 모서리 둥글게 */
+      
+      /* 선택된 탭 하단에 굵은 보라색 선 추가 */
+      border-bottom: 3px solid #4B0082; 
+      color: #4B0082; /* 선택된 탭 글자색 */
+    }
+
+    /* 3. 탭에 마우스를 올렸을 때 (선택되지 않은 탭) */
+    button[data-baseweb="tab"]:hover:not([aria-selected="true"]) {
+      background-color: #fafafa; /* 마우스 오버 배경색 */
+      color: #555;
+    }
+    
+    /* 4. 탭 전체를 감싸는 바닥 선 (구분선) */
+    .stTabs .st-emotion-cache-1gwan2n {
+       border-bottom: 2px solid #e1e4e8;
+    }
+    
     </style>
     """, unsafe_allow_html=True)
 
@@ -463,7 +499,7 @@ def show_report(store_data, data):
                     st.write(event_rec.get("details"))
                     source = event_rec.get("source")
                     if source and "http" in source:
-                        st.caption(f"정보 출처: [{source}]({source})")
+                        st.caption(f"정보 출처: [{source}]({source})\n\n(참고: 위 출처는 AI가 생성한 예시 URL일 수 있으며, 실제 접속이 어려울 수 있습니다.)")
                 else:
                     st.info("현재 추천할만한 주변 지역 행사를 찾지 못했습니다.")
 
@@ -471,7 +507,7 @@ def show_report(store_data, data):
                 st.warning(f"💡 {report_data.get('fact_based_example', '관련 사례 없음')}")
                 source_url = report_data.get("example_source")
                 if source_url and "http" in source_url:
-                    st.caption(f"출처: [{source_url}]({source_url})")
+                st.caption(f"출처: [{source_url}]({source_url})\n\n(참고: 위 출처는 AI가 생성한 예시 URL일 수 있으며, 실제 접속이 어려울 수 있습니다.)")
 
                 st.markdown(report_data.get("action_table", "실행 계획 없음"))
                 st.subheader("📈 예상 기대효과")
