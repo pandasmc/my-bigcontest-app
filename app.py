@@ -294,17 +294,20 @@ def show_report(store_data, data):
         background-color: #f0f2f6 !important; /* [수정] 호버 시 연한 회색 배경 */
     }
 
-    /* 4. 현재 선택된 탭 스타일 (보라색 배경 + 흰 글씨) */
+    /* 4. 현재 선택된 탭 스타일 (연보라 배경 + 진보라 글씨) */
     div[data-testid="stTabs"] button[aria-selected="true"] {
-        background-color: #4B0082 !important;    /* [수정] 선택된 탭 배경색 (진한 보라) */
-        border: none !important;                 /* [수정] 테두리 제거 */
-        border-radius: 8px !important;           /* [수정] 둥근 모서리 */
+        background-color: #E6E6FA !important;    /* [수정] 연한 보라색 (라벤더) */
+        border: none !important;
+        border-radius: 8px !important;
         transform: none; 
+        
+        /* [추가] 연한 배경에 잘 보이도록 얇은 테두리 추가 */
+        border: 1px solid #D8BFD8 !important; 
     }
     
     /* 4-1. (선택된 탭) 폰트 색 */
     div[data-testid="stTabs"] button[aria-selected="true"] > div {
-        color: #FFFFFF !important; /* [수정] 선택된 탭 폰트색 (흰색) */
+        color: #4B0082 !important; /* [수정] 진한 보라색 글씨 */
     }
     
     /* 5. 탭 전체를 감싸는 바닥 선 */
