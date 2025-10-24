@@ -507,7 +507,7 @@ def show_report(store_data, data):
                 st.warning(f"💡 {report_data.get('fact_based_example', '관련 사례 없음')}")
                 source_url = report_data.get("example_source")
                 if source_url and "http" in source_url:
-                st.caption(f"출처: [{source_url}]({source_url})\n\n(참고: 위 출처는 AI가 생성한 예시 URL일 수 있으며, 실제 접속이 어려울 수 있습니다.)")
+                    st.caption(f"출처: [{source_url}]({source_url})\n\n(참고: 위 출처는 AI가 생성한 예시 URL일 수 있으며, 실제 접속이 어려울 수 있습니다.)")
 
                 st.markdown(report_data.get("action_table", "실행 계획 없음"))
                 st.subheader("📈 예상 기대효과")
