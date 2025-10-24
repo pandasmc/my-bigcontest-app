@@ -262,45 +262,49 @@ def show_report(store_data, data):
     .bar-chart-bar { background-color: #5c9ce5; height: 20px; border-radius: 5px; }
 
     /* ---------------------------------- */
-    /* 탭 스타일 */
+    /* [수정] 탭 스타일 (버튼 디자인 + 간격/hover) */
     /* ---------------------------------- */
 
-    /* 1. 탭 버튼 자체의 스타일 (패딩, hover 효과) */
+    /* 1. 탭 버튼 기본 스타일 (네모 버튼 모양 + 간격) */
     div[data-testid="stTabs"] button {
-        padding-top: 15px !important;
-        padding-bottom: 15px !important;
+        background-color: #f0f2f6 !important;  /* [추가] 기본 배경색 (연한 회색) */
+        border: 1px solid #e1e4e8 !important;    /* [추가] 테두리 */
+        border-bottom: none !important;         /* [추가] 하단 테두리 제거 (탭처럼 보이게) */
+        border-radius: 8px 8px 0 0 !important; /* [추가] 위쪽 모서리 둥글게 */
+        
+        padding-top: 0.5em !important;    /* [수정] 폰트 크기 비례 상단 간격 */
+        padding-bottom: 0.5em !important; /* [수정] 폰트 크기 비례 하단 간격 */
+        padding-left: 0.75em !important;  /* [추가] 좌우 간격 */
+        padding-right: 0.75em !important; /* [추가] 좌우 간격 */
+        
+        margin-right: 5px !important;     /* [추가] 버튼 사이 간격 */
+        
         transition: transform 0.2s ease-in-out, background-color 0.2s;
     }
 
-    /* 2. 탭 버튼 내부의 텍스트 DIV (★가장 중요★) */
-    /* 폰트 크기는 버튼이 아니라 이 내부 DIV에 적용해야 합니다 */
+    /* 2. 탭 버튼 내부의 텍스트 DIV */
     div[data-testid="stTabs"] button > div {
-        font-size: 2.5em !important;   /* [수정] 2.5em으로 강력 적용! */
+        font-size: 2.0em !important;  
         font-weight: bold !important;
-        transition: color 0.2s ease-in-out; 
-    }
+        color: #555 !important;  
 
     /* 3. 탭에 마우스를 올렸을 때 (선택 안 된 탭) */
     div[data-testid="stTabs"] button:hover:not([aria-selected="true"]) {
-        transform: scale(1.1);  /* 1.1배 확대 */
-        background-color: #fafafa !important;
-    }
-    /* 3-1. (선택 안 된 탭) 마우스 올렸을 때 폰트 색 */
-    div[data-testid="stTabs"] button:hover:not([aria-selected="true"]) > div {
-        color: #555 !important;
+        transform: scale(1.05); /
+        background-color: #e9ecef !important; /* [수정] 호버 시 배경색 */
     }
 
-
-    /* 4. 현재 선택된 탭 스타일 (hover 효과 없음) */
+    /* 4. 현재 선택된 탭 스타일 (흰색 버튼 + 보라색 밑줄) */
     div[data-testid="stTabs"] button[aria-selected="true"] {
-        background-color: #f0f2f6;
-        border-radius: 8px 8px 0 0;
-        border-bottom: 3px solid #4B0082; 
-        transform: none; /* 선택된 탭은 커지지 않음 */
+        background-color: #FFFFFF !important;    /* [수정] 선택된 탭 배경색 (흰색) */
+        border: 1px solid #e1e4e8 !important;
+        border-bottom: 3px solid #4B0082 !important; /* [수정] 굵은 보라색 밑줄로 강조 */
+        transform: none; 
     }
+    
     /* 4-1. (선택된 탭) 폰트 색 */
     div[data-testid="stTabs"] button[aria-selected="true"] > div {
-        color: #4B0082 !important;
+        color: #4B0082 !important; /* [수정] 선택된 탭 폰트색 (보라색) */
     }
     
     /* 5. 탭 전체를 감싸는 바닥 선 */
