@@ -292,6 +292,21 @@ def show_report(store_data, data):
     .stTabs .st-emotion-cache-1gwan2n {
        border-bottom: 2px solid #e1e4e8;
     }
+
+    /* ---------------------------------- */
+    /* [추가] 차트 hover 시 확대 효과 */
+    /* ---------------------------------- */
+    .zoom-chart {
+      transition: transform 0.2s ease-in-out; /* 부드러운 효과 */
+      cursor: zoom-in;
+    }
+    .zoom-chart:hover {
+      transform: scale(1.15); /* 115%로 확대 */
+      z-index: 10; /* 다른 요소 위로 올라오도록 함 */
+      position: relative; /* z-index 적용을 위해 */
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      border-radius: 5px;
+    }
     
     </style>
     """, unsafe_allow_html=True)
@@ -383,12 +398,11 @@ def show_report(store_data, data):
         x = range(len(months))
 
         # --- 차트 크기/너비 설정 ---
-        CHART_FIGSIZE = (8, 4) 
-        CHART_WIDTH = 700        
+        CHART_FIGSIZE = (6, 3.5) 
+        CHART_WIDTH = 550        
         # ---------------------------
 
         st.subheader("고객 및 상권 동향")
-        # --- gap="small"로 컬럼 간 간격 좁히기 ---
         chart_col1, chart_col2, chart_col3 = st.columns(3, gap="small") 
         
         with chart_col1:
@@ -397,14 +411,12 @@ def show_report(store_data, data):
                 fig, ax = plt.subplots(figsize=CHART_FIGSIZE) 
                 plot_line_chart(ax, months, [data_list[0:3], data_list[3:6], data_list[6:9]], ['유동고객', '직장고객', '거주고객'], "고객 유형 비율", ['steelblue', 'gray', 'darkgreen'], ['o', 's', '^'])
                 fig.tight_layout()
-                
                 buf = io.BytesIO()
                 fig.savefig(buf, format='png')
-                
-                # --- [수정] 변수명을 'data'에서 'img_data'로 변경 ---
                 buf.seek(0)
-                img_data = base64.b64encode(buf.read()).decode() # 👈 수정
-                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True) # 👈 수정
+                img_data = base64.b64encode(buf.read()).decode()
+                # --- [수정] class='zoom-chart' 추가 ---
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("고객 유형 비율 데이터가 없습니다.")
 
@@ -414,14 +426,12 @@ def show_report(store_data, data):
                 fig, ax = plt.subplots(figsize=CHART_FIGSIZE) 
                 plot_line_chart(ax, months, [data_list[0:3], data_list[3:6]], ['신규고객', '재방문율'], "신규/재방문 고객", ['skyblue', 'salmon'], ['o', 's'])
                 fig.tight_layout()
-                
                 buf = io.BytesIO()
                 fig.savefig(buf, format='png')
-
-                # --- [수정] 변수명을 'data'에서 'img_data'로 변경 ---
                 buf.seek(0)
-                img_data = base64.b64encode(buf.read()).decode() # 👈 수정
-                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True) # 👈 수정
+                img_data = base64.b64encode(buf.read()).decode()
+                # --- [수정] class='zoom-chart' 추가 ---
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("신규/재방문 고객 데이터가 없습니다.")
 
@@ -431,21 +441,18 @@ def show_report(store_data, data):
                 fig, ax = plt.subplots(figsize=CHART_FIGSIZE)
                 plot_line_chart(ax, months, [data_list[0:3], data_list[3:6]], ['상권내폐업', '업종내폐업'], "폐업 비율", ['gray', 'black'], ['o', 's'])
                 fig.tight_layout()
-                
                 buf = io.BytesIO()
                 fig.savefig(buf, format='png')
-
-                # --- [수정] 변수명을 'data'에서 'img_data'로 변경 ---
                 buf.seek(0)
-                img_data = base64.b64encode(buf.read()).decode() # 👈 수정
-                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True) # 👈 수정
+                img_data = base64.b64encode(buf.read()).decode()
+                # --- [수정] class='zoom-chart' 추가 ---
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("폐업 비율 데이터가 없습니다.")
             
         st.divider()
         st.subheader("매출 성과")
-        # --- gap="small"로 컬럼 간 간격 좁히기 ---
-        chart_col4, chart_col5 = st.columns(2, gap="small") 
+        spacer1, chart_col4, chart_col5, spacer2 = st.columns([1, 2, 2, 1], gap="small")
         
         with chart_col4:
             data_list = [store_data.get(f'상권내매출순위비율_{m}m') for m in [3,2,1]] + [store_data.get(f'업종내매출순위비율_{m}m') for m in [3,2,1]]
@@ -453,14 +460,12 @@ def show_report(store_data, data):
                 fig, ax = plt.subplots(figsize=CHART_FIGSIZE)
                 plot_bar_chart(ax, x, months, [data_list[0:3], data_list[3:6]], ['상권내', '업종내'], "매출 순위 비율 (상위 N%)", ['lightgray', 'steelblue'])
                 fig.tight_layout()
-                
                 buf = io.BytesIO()
                 fig.savefig(buf, format='png')
-                
-                # --- [수정] 변수명을 'data'에서 'img_data'로 변경 ---
                 buf.seek(0)
-                img_data = base64.b64encode(buf.read()).decode() # 👈 수정
-                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True) # 👈 수정
+                img_data = base64.b64encode(buf.read()).decode()
+                # --- [수정] class='zoom-chart' 추가 ---
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("매출 순위 비율 데이터가 없습니다.")
             
@@ -470,14 +475,12 @@ def show_report(store_data, data):
                 fig, ax = plt.subplots(figsize=CHART_FIGSIZE)
                 plot_bar_chart(ax, x, months, [data_list[0:3], data_list[3:6]], ['건수', '금액'], "매출 건수/금액 (구간)", ['gray', 'darkgreen'])
                 fig.tight_layout()
-                
                 buf = io.BytesIO()
                 fig.savefig(buf, format='png')
-
-                # --- [수정] 변수명을 'data'에서 'img_data'로 변경 ---
                 buf.seek(0)
-                img_data = base64.b64encode(buf.read()).decode() # 👈 수정
-                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True) # 👈 수정
+                img_data = base64.b64encode(buf.read()).decode()
+                # --- [수정] class='zoom-chart' 추가 ---
+                st.markdown(f"<img src='data:image/png;base64,{img_data}' width='{CHART_WIDTH}' style='display: block; margin-left: auto; margin-right: auto;' class='zoom-chart'>", unsafe_allow_html=True)
                 plt.close(fig) 
             else: st.info("매출 건수/금액 데이터가 없습니다.")
 
