@@ -264,34 +264,46 @@ def show_report(store_data, data):
     /* ---------------------------------- */
     /* 탭 스타일 */
     /* ---------------------------------- */
-    
-    /* 1. 탭 버튼 기본 스타일 (글자 크기, 패딩, hover 전환 효과) */
+
+    /* 1. 탭 버튼 자체의 스타일 (패딩, hover 효과) */
     div[data-testid="stTabs"] button {
-        font-size: 2.0em !important;   /* [수정] 3.5em은 너무 크니 2.0em으로 시작. (작동 확인 후 3.5em으로 키워보세요) */
-        font-weight: bold;
         padding-top: 15px !important;
         padding-bottom: 15px !important;
-        transition: transform 0.2s ease-in-out, background-color 0.2s; /* [추가] hover 효과 */
+        transition: transform 0.2s ease-in-out, background-color 0.2s;
     }
 
-    /* 2. 탭에 마우스를 올렸을 때 (선택 안 된 탭) */
+    /* 2. 탭 버튼 내부의 텍스트 DIV (★가장 중요★) */
+    /* 폰트 크기는 버튼이 아니라 이 내부 DIV에 적용해야 합니다 */
+    div[data-testid="stTabs"] button > div {
+        font-size: 2.5em !important;   /* [수정] 2.5em으로 강력 적용! */
+        font-weight: bold !important;
+        transition: color 0.2s ease-in-out; 
+    }
+
+    /* 3. 탭에 마우스를 올렸을 때 (선택 안 된 탭) */
     div[data-testid="stTabs"] button:hover:not([aria-selected="true"]) {
-        transform: scale(1.1);  /* [추가] 1.1배 확대 */
-        background-color: #fafafa !important; /* !important 추가 */
-        color: #555;
+        transform: scale(1.1);  /* 1.1배 확대 */
+        background-color: #fafafa !important;
+    }
+    /* 3-1. (선택 안 된 탭) 마우스 올렸을 때 폰트 색 */
+    div[data-testid="stTabs"] button:hover:not([aria-selected="true"]) > div {
+        color: #555 !important;
     }
 
-    /* 3. 현재 선택된 탭 스타일 (hover 효과 없음) */
+
+    /* 4. 현재 선택된 탭 스타일 (hover 효과 없음) */
     div[data-testid="stTabs"] button[aria-selected="true"] {
-        font-size: 2.0em !important; /* [수정] 여기도 동일하게! */
         background-color: #f0f2f6;
         border-radius: 8px 8px 0 0;
         border-bottom: 3px solid #4B0082; 
-        color: #4B0082;
         transform: none; /* 선택된 탭은 커지지 않음 */
     }
+    /* 4-1. (선택된 탭) 폰트 색 */
+    div[data-testid="stTabs"] button[aria-selected="true"] > div {
+        color: #4B0082 !important;
+    }
     
-    /* 4. 탭 전체를 감싸는 바닥 선 (안정적인 선택자로 변경) */
+    /* 5. 탭 전체를 감싸는 바닥 선 */
     div[data-testid="stTabs"] > div:first-child {
        border-bottom: 2px solid #e1e4e8;
     }
